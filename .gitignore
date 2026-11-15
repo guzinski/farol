@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+
+# media and generated files
+videos/
+output/
+
+# downloaded models
+*.pt
+voices/

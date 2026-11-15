@@ -1,0 +1,29 @@
+{
+  "meta.voice": "en_US-lessac-medium",
+
+  "level.danger": "DANGER",
+  "level.warning": "WARNING",
+  "level.info": "INFO",
+
+  "traffic_light.red": "Red light",
+  "traffic_light.yellow": "Yellow light",
+  "traffic_light.green": "Green light",
+  "traffic_light.turned_green": "Light turned green",
+
+  "sign.stop": "Stop sign ahead",
+
+  "obstacle.close": "Watch out! {object} very close",
+  "obstacle.ahead": "{object} ahead",
+
+  "object.pedestrian": "Pedestrian",
+  "object.cyclist": "Cyclist",
+  "object.motorcycle": "Motorcycle",
+  "object.vehicle": "Vehicle",
+  "object.bus": "Bus",
+  "object.truck": "Truck",
+
+  "color.red": "red",
+  "color.yellow": "yellow",
+  "color.green": "green",
+  "label.stop": "STOP"
+}

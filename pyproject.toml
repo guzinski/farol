@@ -1,0 +1,23 @@
+[project]
+name = "farol"
+version = "0.1.0"
+description = "Prototype: camera-based driving assistant that calls out traffic lights and signs for people with low vision"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "ultralytics>=8.3",
+    "torch",
+    "torchvision",
+    "opencv-python-headless",
+    "lap",
+    "piper-tts",
+]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+torchvision = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
