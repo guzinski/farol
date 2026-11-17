@@ -1,7 +1,7 @@
 """Runs farol over a recorded video and produces an annotated video + subtitles + alert log.
 
 usage: uv run python -m farol videos/drive.mp4 [--lang pt-BR] [--start 0 --duration 60]
-                                               [--obstacles] [--audio]
+                                               [--lights position|single] [--obstacles] [--audio]
 
 By default only traffic lights and signs are announced; --obstacles turns on vehicle and
 pedestrian warnings (still too many false alarms) and --audio also renders the spoken track.
@@ -20,8 +20,8 @@ import cv2
 from .alerts import DANGER, INFO, WARNING, AlertManager, Voice
 from .i18n import DEFAULT, Translator, available
 from .perception import (BICYCLE, MOTORCYCLE, PERSON, STOP_SIGN, TRAFFIC_LIGHT, VEHICLES, VULNERABLE,
-                         Corridor, Detector, RelevantTrafficLight, TTCEstimator, red_fraction, riding,
-                         traffic_light_color)
+                         Corridor, Detector, RelevantTrafficLight, TrafficLightsByPosition, TTCEstimator,
+                         red_fraction, riding, traffic_light_color)
 from .subtitles import convert
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -35,7 +35,11 @@ def evaluate(t, frame, dets, corridor, ttc, light, alerts, stop_seen, obstacles=
     # --- Traffic light: speaks when the state changes
     before = light.state
     now = light.update([d for d in dets if d.cls == TRAFFIC_LIGHT])
-    if now and now != before:
+    if now and now != before and not isinstance(now, str):
+        # lights on different sides disagree: say each one
+        alerts.try_emit(t, f"light-{now}", WARNING, "traffic_light.by_position",
+                        {"lights": [list(pair) for pair in now]}, repeat_after=3)
+    elif now and now != before:
         key = "traffic_light.turned_green" if (before, now) == ("red", "green") else f"traffic_light.{now}"
         alerts.try_emit(t, f"light-{now}", LIGHT_LEVEL[now], key, repeat_after=3)
     elif now == "red":
@@ -78,9 +82,9 @@ def evaluate(t, frame, dets, corridor, ttc, light, alerts, stop_seen, obstacles=
     if worst:
         urgency, d, kind = worst
         if urgency == DANGER:
-            alerts.try_emit(t, f"danger-{kind}", DANGER, "obstacle.close", kind, repeat_after=4)
+            alerts.try_emit(t, f"danger-{kind}", DANGER, "obstacle.close", {"object": kind}, repeat_after=4)
         else:
-            alerts.try_emit(t, f"warning-{kind}", WARNING, "obstacle.ahead", kind, repeat_after=6)
+            alerts.try_emit(t, f"warning-{kind}", WARNING, "obstacle.ahead", {"object": kind}, repeat_after=6)
     ttc.prune({d.id for d in dets})
 
 
@@ -89,12 +93,14 @@ def ascii_only(text: str) -> str:
     return unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
 
 
-def draw(frame, dets, corridor, light_state, recent, t, tr):
+def draw(frame, dets, corridor, light_colors, recent, t, tr):
     cv2.polylines(frame, [corridor.polygon], True, (255, 200, 0), 2)
     for d in dets:
         x1, y1, x2, y2 = d.box
         if d.cls == TRAFFIC_LIGHT:
             color, label = BGR[d.color], tr(f"color.{d.color}") if d.color else "?"
+            if d.position:
+                label += f" ({tr(f'position.{d.position}')})"
         elif d.cls == STOP_SIGN:
             color, label = (0, 0, 255), tr("label.stop")
         else:
@@ -103,14 +109,17 @@ def draw(frame, dets, corridor, light_state, recent, t, tr):
             label = (tr(f"object.{kind}") if kind else "") + (f" {d.ttc:.1f}s" if d.ttc and d.in_corridor else "")
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
         cv2.putText(frame, ascii_only(label), (x1, max(y1 - 5, 12)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-    cv2.circle(frame, (40, 40), 24, BGR[light_state], -1)
-    cv2.circle(frame, (40, 40), 24, (255, 255, 255), 2)
+    x = 40  # one circle per tracked light: a single one, or left / ahead / right
+    for light_color in light_colors:
+        cv2.circle(frame, (x, 40), 24, BGR[light_color], -1)
+        cv2.circle(frame, (x, 40), 24, (255, 255, 255), 2)
+        x += 56
     y = 40
     for a in recent:
         if t - a.t < 3.0:
-            text = ascii_only(tr.alert(a.key, a.obj))
-            cv2.putText(frame, text, (80, y + 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 6)
-            cv2.putText(frame, text, (80, y + 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, LEVEL_BGR[a.level], 2)
+            text = ascii_only(tr.alert(a.key, a.params))
+            cv2.putText(frame, text, (x - 16, y + 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 6)
+            cv2.putText(frame, text, (x - 16, y + 10), cv2.FONT_HERSHEY_SIMPLEX, 1.0, LEVEL_BGR[a.level], 2)
             y += 38
 
 
@@ -126,6 +135,8 @@ def main():
     p.add_argument("--hood", type=float, default=0.92, help="where the car's hood starts (0-1)")
     p.add_argument("--fps", type=float, default=15, help="frames per second analysed")
     p.add_argument("--out", type=Path, default=ROOT / "output", help="output folder")
+    p.add_argument("--lights", choices=["position", "single"], default="position",
+                   help="track one light per side of the image (left/ahead/right), or only the most relevant one")
     p.add_argument("--obstacles", action="store_true", help="turn on vehicle and pedestrian warnings")
     p.add_argument("--audio", action="store_true", help="render the spoken track and mux it into the video")
     a = p.parse_args()
@@ -154,7 +165,8 @@ def main():
 
     detector = Detector(a.model, a.imgsz)
     corridor = Corridor(w, h, a.horizon, a.hood)
-    ttc, light, alerts = TTCEstimator(), RelevantTrafficLight(w, h), AlertManager()
+    light = TrafficLightsByPosition(w, h) if a.lights == "position" else RelevantTrafficLight(w, h)
+    ttc, alerts = TTCEstimator(), AlertManager()
     stop_seen: dict[int, int] = {}
 
     n, t0 = 0, time.time()
@@ -170,7 +182,7 @@ def main():
             if d.cls == TRAFFIC_LIGHT:
                 d.color = traffic_light_color(frame, d.box)
         evaluate(t, frame, dets, corridor, ttc, light, alerts, stop_seen, a.obstacles)
-        draw(frame, dets, corridor, light.state, alerts.emitted[-3:], t, tr)
+        draw(frame, dets, corridor, light.display, alerts.emitted[-3:], t, tr)
         writer.write(frame)
         n += 1
         if n % 150 == 0:

@@ -33,7 +33,7 @@ def srt(alerts: list[dict], tr: Translator, duration: float = 3.0, colors: bool 
         end = a["t"] + duration
         if i + 1 < len(alerts):
             end = min(end, alerts[i + 1]["t"] - 0.05)
-        text = f"[{tr('level.' + a['level'])}] {tr.alert(a['key'], a.get('object'))}"
+        text = f"[{tr('level.' + a['level'])}] {tr.alert(a['key'], a.get('params'))}"
         if colors:
             text = f'<font color="{COLORS[a["level"]]}">{text}</font>'
         blocks.append(f"{i + 1}\n{_timestamp(a['t'])} --> {_timestamp(end)}\n{text}\n")

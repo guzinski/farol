@@ -18,11 +18,11 @@ class Alert:
     t: float
     level: int
     key: str  # message key, e.g. "traffic_light.red"
-    obj: str | None = None  # object kind for obstacle messages, e.g. "pedestrian"
+    params: dict | None = None  # language-neutral values for the message, see Translator.alert
 
     def record(self, tr) -> dict:
         return {"t": self.t, "level": LEVEL_NAMES[self.level], "key": self.key,
-                "object": self.obj, "text": tr.alert(self.key, self.obj)}
+                "params": self.params, "text": tr.alert(self.key, self.params)}
 
 
 class AlertManager:
@@ -35,7 +35,7 @@ class AlertManager:
         self.last_t = -1e9
         self.emitted: list[Alert] = []
 
-    def try_emit(self, t: float, slot: str, level: int, key: str, obj: str | None = None,
+    def try_emit(self, t: float, slot: str, level: int, key: str, params: dict | None = None,
                  *, repeat_after: float) -> bool:
         if t - self.last_by_slot.get(slot, -1e9) < repeat_after:
             return False
@@ -44,7 +44,7 @@ class AlertManager:
             return False
         self.last_by_slot[slot] = t
         self.last_t = t
-        self.emitted.append(Alert(round(t, 2), level, key, obj))
+        self.emitted.append(Alert(round(t, 2), level, key, params))
         return True
 
 

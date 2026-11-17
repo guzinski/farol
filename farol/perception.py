@@ -25,11 +25,44 @@ class Detection:
     in_corridor: bool = False
     ttc: float | None = None  # estimated time to collision (s)
     color: str | None = None  # traffic lights only: "red", "yellow" or "green"
+    position: str | None = None  # traffic lights only: "left", "ahead" or "right" when it counts
+
+
+def prefer_directml() -> bool:
+    """Makes ONNX models run on the GPU through DirectML (any DirectX 12 GPU on Windows: AMD,
+    Intel or NVIDIA). Ultralytics only picks CUDA, CoreML or Windows ML (Windows 11 24H2+) by
+    itself, so on Windows 10 it would fall back to the CPU. Needs the `onnxruntime-directml`
+    package; does nothing without it."""
+    try:
+        import onnxruntime as ort
+    except ImportError:
+        return False
+    if "DmlExecutionProvider" not in ort.get_available_providers():
+        return False
+    if getattr(ort.InferenceSession, "farol_directml", False):
+        return True
+    base = ort.InferenceSession
+
+    class DirectMLSession(base):
+        farol_directml = True
+
+        def __init__(self, path, sess_options=None, providers=None, **kwargs):
+            if providers == ["CPUExecutionProvider"]:
+                providers = ["DmlExecutionProvider", "CPUExecutionProvider"]
+                sess_options = sess_options or ort.SessionOptions()
+                sess_options.enable_mem_pattern = False  # not supported by DirectML
+                sess_options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+            super().__init__(path, sess_options, providers=providers, **kwargs)
+
+    ort.InferenceSession = DirectMLSession
+    return True
 
 
 class Detector:
     def __init__(self, model: str = "yolo11s.pt", imgsz: int = 960, conf: float = 0.3):
-        self.model = YOLO(model)
+        if str(model).endswith(".onnx"):
+            prefer_directml()
+        self.model = YOLO(model, task="detect")
         self.imgsz = imgsz
         self.conf = conf
 
@@ -49,8 +82,9 @@ class Detector:
         return dets
 
 
-def traffic_light_color(frame: np.ndarray, box: tuple[int, int, int, int]) -> str | None:
-    """Classifies the lit lamp by the hue of the bright, saturated pixels."""
+def lit_pixel_counts(frame: np.ndarray, box: tuple[int, int, int, int]) -> tuple[dict[str, int], int] | None:
+    """Bright, saturated pixels of each lamp hue inside a traffic light box, and the box area.
+    None when the box is too small to read."""
     x1, y1, x2, y2 = box
     crop = frame[max(y1, 0):y2, max(x1, 0):x2]
     if crop.size == 0 or crop.shape[0] < 8:
@@ -58,14 +92,51 @@ def traffic_light_color(frame: np.ndarray, box: tuple[int, int, int, int]) -> st
     hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
     h, s, v = hsv[..., 0], hsv[..., 1], hsv[..., 2]
     lit = (s > 90) & (v > 160)
-    n = {
+    counts = {
         "red": int((lit & ((h < 10) | (h > 168))).sum()),
         "yellow": int((lit & (h >= 14) & (h <= 34)).sum()),
         "green": int((lit & (h >= 42) & (h <= 98)).sum()),
     }
-    color, count = max(n.items(), key=lambda kv: kv[1])
-    if count < max(4, 0.02 * lit.size):
+    return counts, lit.size
+
+
+def thirds_brightness(frame: np.ndarray, box) -> tuple[float, float, float] | None:
+    """Mean brightness of the top, middle and bottom thirds of a box."""
+    x1, y1, x2, y2 = box
+    crop = frame[max(y1, 0):y2, max(x1, 0):x2]
+    if crop.size == 0 or crop.shape[0] < 6:
         return None
+    v = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)[..., 2].astype(np.float32)
+    top, mid, bottom = np.array_split(v, 3, axis=0)
+    return float(top.mean()), float(mid.mean()), float(bottom.mean())
+
+
+def lamp_by_position(frame: np.ndarray, box, min_gap: float = 25) -> str | None:
+    """Reads a vertical light by which lamp is lit: top = red, middle = yellow, bottom = green.
+    Works when the colour itself is washed out (old incandescent lamps in direct sun, LED green
+    that the camera renders almost white), as long as one third is clearly brighter."""
+    x1, y1, x2, y2 = box
+    if y2 - y1 < 2 * (x2 - x1):  # not a vertical light, or seen from the side
+        return None
+    thirds = thirds_brightness(frame, box)
+    if thirds is None:
+        return None
+    ranked = sorted(range(3), key=lambda i: thirds[i], reverse=True)
+    if thirds[ranked[0]] - thirds[ranked[1]] < min_gap:
+        return None
+    return ("red", "yellow", "green")[ranked[0]]
+
+
+def traffic_light_color(frame: np.ndarray, box: tuple[int, int, int, int]) -> str | None:
+    """Classifies the lit lamp by the hue of the bright, saturated pixels, falling back to
+    which lamp is lit when the hue is too washed out to tell."""
+    read = lit_pixel_counts(frame, box)
+    if read is None:
+        return None
+    counts, area = read
+    color, count = max(counts.items(), key=lambda kv: kv[1])
+    if count < max(4, 0.02 * area):
+        return lamp_by_position(frame, box)
     return color
 
 
@@ -135,6 +206,10 @@ class RelevantTrafficLight:
         self.votes: deque = deque(maxlen=frames)
         self.state: str | None = None
 
+    @property
+    def display(self) -> list[str | None]:
+        return [self.state]
+
     def update(self, lights: list[Detection]) -> str | None:
         candidates = [s for s in lights if s.color and s.box[3] < 0.65 * self.h]
         chosen = None
@@ -148,6 +223,62 @@ class RelevantTrafficLight:
         color, count = Counter(self.votes).most_common(1)[0]
         if count >= (self.votes.maxlen * 2) // 3 and len(self.votes) == self.votes.maxlen:
             self.state = color
+        return self.state
+
+
+POSITIONS = ("left", "ahead", "right")
+
+
+class TrafficLightsByPosition:
+    """Tracks one colour per side of the image (left / ahead / right) instead of a single light,
+    for junctions where each movement has its own signal.
+
+    `state` is a colour name when every visible light agrees, a tuple of (position, colour)
+    pairs when they differ, and None when no light is visible.
+    """
+
+    def __init__(self, width: int, height: int, frames: int = 9,
+                 left_until: float = 0.38, right_from: float = 0.62, min_relative_height: float = 0.5):
+        self.w, self.h = width, height
+        self.left_until, self.right_from = left_until * width, right_from * width
+        self.min_relative_height = min_relative_height
+        self.votes = {p: deque(maxlen=frames) for p in POSITIONS}
+        self.colors: dict[str, str | None] = {p: None for p in POSITIONS}
+        self.state: str | tuple | None = None
+
+    @property
+    def display(self) -> list[str | None]:
+        return [self.colors[p] for p in POSITIONS]
+
+    def _position(self, box) -> str:
+        x = (box[0] + box[2]) / 2
+        return "left" if x < self.left_until else "right" if x > self.right_from else "ahead"
+
+    def update(self, lights: list[Detection]) -> str | tuple | None:
+        candidates = [s for s in lights if s.color and s.box[3] < 0.65 * self.h]
+        if candidates:
+            # much smaller lights belong to the next junction, not this one
+            tallest = max(s.box[3] - s.box[1] for s in candidates)
+            candidates = [s for s in candidates if s.box[3] - s.box[1] >= self.min_relative_height * tallest]
+        best: dict[str, Detection] = {}
+        for s in candidates:
+            s.position = self._position(s.box)
+            other = best.get(s.position)
+            if other is None or s.box[3] - s.box[1] > other.box[3] - other.box[1]:
+                best[s.position] = s
+        for p in POSITIONS:
+            votes = self.votes[p]
+            votes.append(best[p].color if p in best else None)
+            color, count = Counter(votes).most_common(1)[0]
+            if count >= (votes.maxlen * 2) // 3 and len(votes) == votes.maxlen:
+                self.colors[p] = color
+        seen = [(p, self.colors[p]) for p in POSITIONS if self.colors[p]]
+        if not seen:
+            self.state = None
+        elif len({c for _, c in seen}) == 1:
+            self.state = seen[0][1]
+        else:
+            self.state = tuple(seen)
         return self.state
 
 

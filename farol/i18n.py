@@ -31,6 +31,14 @@ class Translator:
     def __call__(self, key: str, **params) -> str:
         return self.messages[key].format(**params)
 
-    def alert(self, key: str, obj: str | None = None) -> str:
-        """Text of an alert; `obj` is an object kind such as "pedestrian"."""
-        return self(key, object=self(f"object.{obj}")) if obj else self(key)
+    def alert(self, key: str, params: dict | None = None) -> str:
+        """Text of an alert. `params` holds language-neutral values that are translated here:
+        `object` is an object kind ("pedestrian"), `lights` a list of (position, colour) pairs."""
+        p = dict(params or {})
+        if "object" in p:
+            p["object"] = self(f"object.{p['object']}")
+        if "lights" in p:
+            p["lights"] = ", ".join(
+                self("light.at", position=self(f"position.{pos}"), color=self(f"color.{color}"))
+                for pos, color in p["lights"])
+        return self(key, **p)

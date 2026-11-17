@@ -1,27 +1,26 @@
 {
   "meta.voice": "pt_BR-faber-medium",
-
   "level.danger": "PERIGO",
   "level.warning": "ATENÇÃO",
   "level.info": "INFO",
-
   "traffic_light.red": "Semáforo vermelho",
   "traffic_light.yellow": "Semáforo amarelo",
   "traffic_light.green": "Semáforo verde",
   "traffic_light.turned_green": "Semáforo abriu",
-
+  "traffic_light.by_position": "Semáforos: {lights}",
+  "light.at": "{position} {color}",
+  "position.left": "esquerda",
+  "position.ahead": "em frente",
+  "position.right": "direita",
   "sign.stop": "Placa de pare à frente",
-
   "obstacle.close": "Cuidado! {object} muito perto",
   "obstacle.ahead": "{object} à frente",
-
   "object.pedestrian": "Pedestre",
   "object.cyclist": "Ciclista",
   "object.motorcycle": "Moto",
   "object.vehicle": "Veículo",
   "object.bus": "Ônibus",
   "object.truck": "Caminhão",
-
   "color.red": "vermelho",
   "color.yellow": "amarelo",
   "color.green": "verde",
