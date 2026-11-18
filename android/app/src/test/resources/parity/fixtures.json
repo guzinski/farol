@@ -1,0 +1,1161 @@
+[
+  {
+    "file": "ida-151.9-0.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 64,
+        "green": 0
+      },
+      2923
+    ],
+    "thirds_brightness": [
+      134.6816864013672,
+      126.53742218017578,
+      126.71102142333984
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": "yellow"
+  },
+  {
+    "file": "ida-151.9-1.png",
+    "lit_pixel_counts": [
+      {
+        "red": 160,
+        "yellow": 0,
+        "green": 0
+      },
+      2296
+    ],
+    "thirds_brightness": [
+      209.2831573486328,
+      165.90078735351562,
+      174.64947509765625
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-151.9-2.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 84,
+        "green": 0
+      },
+      943
+    ],
+    "thirds_brightness": [
+      219.27328491210938,
+      205.44720458984375,
+      216.6722412109375
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-151.9-3.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 152,
+        "green": 0
+      },
+      780
+    ],
+    "thirds_brightness": [
+      211.0653839111328,
+      188.86923217773438,
+      199.8384552001953
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-151.9-4.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 3,
+        "green": 0
+      },
+      646
+    ],
+    "thirds_brightness": [
+      187.50437927246094,
+      168.7894744873047,
+      162.08612060546875
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-151.9-5.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 66,
+        "green": 0
+      },
+      378
+    ],
+    "thirds_brightness": [
+      180.6825408935547,
+      149.94444274902344,
+      150.57936096191406
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-151.9-6.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      338
+    ],
+    "thirds_brightness": [
+      211.73504638671875,
+      185.64102172851562,
+      184.49038696289062
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-191.9-0.png",
+    "lit_pixel_counts": [
+      {
+        "red": 217,
+        "yellow": 121,
+        "green": 0
+      },
+      4230
+    ],
+    "thirds_brightness": [
+      151.20069885253906,
+      121.08100128173828,
+      121.0853042602539
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-191.9-1.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 138,
+        "green": 0
+      },
+      1222
+    ],
+    "thirds_brightness": [
+      224.24758911132812,
+      212.22116088867188,
+      219.39230346679688
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-191.9-2.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      2294
+    ],
+    "thirds_brightness": [
+      169.73806762695312,
+      172.8258056640625,
+      163.11558532714844
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-191.9-3.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 42,
+        "green": 0
+      },
+      348
+    ],
+    "thirds_brightness": [
+      184.9499969482422,
+      169.125,
+      167.74073791503906
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-191.9-4.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 199,
+        "green": 0
+      },
+      966
+    ],
+    "thirds_brightness": [
+      215.85403442382812,
+      201.0186309814453,
+      214.33851623535156
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-191.9-5.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 46,
+        "green": 0
+      },
+      660
+    ],
+    "thirds_brightness": [
+      211.93637084960938,
+      198.28636169433594,
+      184.19544982910156
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-191.9-6.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      435
+    ],
+    "thirds_brightness": [
+      215.74667358398438,
+      192.82000732421875,
+      183.57777404785156
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-200.5-0.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 121,
+        "green": 0
+      },
+      4224
+    ],
+    "thirds_brightness": [
+      123.4758529663086,
+      115.69957733154297,
+      115.47443389892578
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": "yellow"
+  },
+  {
+    "file": "ida-200.5-1.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 124
+      },
+      2080
+    ],
+    "thirds_brightness": [
+      160.99716186523438,
+      183.7954559326172,
+      225.3095245361328
+    ],
+    "lamp_by_position": "green",
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "ida-200.5-2.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 173,
+        "green": 0
+      },
+      1196
+    ],
+    "thirds_brightness": [
+      215.30528259277344,
+      205.0205078125,
+      212.77691650390625
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-200.5-3.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 33,
+        "green": 0
+      },
+      372
+    ],
+    "thirds_brightness": [
+      181.40908813476562,
+      161.125,
+      158.5833282470703
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-200.5-4.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 52,
+        "green": 0
+      },
+      693
+    ],
+    "thirds_brightness": [
+      205.7012939453125,
+      190.18614196777344,
+      170.87013244628906
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-200.5-5.png",
+    "lit_pixel_counts": [
+      {
+        "red": 5,
+        "yellow": 214,
+        "green": 0
+      },
+      966
+    ],
+    "thirds_brightness": [
+      208.9503173828125,
+      195.31365966796875,
+      205.1645965576172
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-203.1-0.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 147,
+        "green": 6
+      },
+      4370
+    ],
+    "thirds_brightness": [
+      122.7466049194336,
+      115.71671295166016,
+      125.08415222167969
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": "yellow"
+  },
+  {
+    "file": "ida-203.1-1.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 262,
+        "green": 0
+      },
+      1248
+    ],
+    "thirds_brightness": [
+      222.63221740722656,
+      212.68028259277344,
+      221.52403259277344
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-203.1-2.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 314
+      },
+      1922
+    ],
+    "thirds_brightness": [
+      149.1474609375,
+      169.542236328125,
+      202.09193420410156
+    ],
+    "lamp_by_position": "green",
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "ida-203.1-3.png",
+    "lit_pixel_counts": [
+      {
+        "red": 22,
+        "yellow": 197,
+        "green": 0
+      },
+      943
+    ],
+    "thirds_brightness": [
+      217.8633575439453,
+      203.1086883544922,
+      212.41806030273438
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-203.1-4.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 105,
+        "green": 0
+      },
+      759
+    ],
+    "thirds_brightness": [
+      211.32015991210938,
+      195.94070434570312,
+      176.75494384765625
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-203.1-5.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      476
+    ],
+    "thirds_brightness": [
+      218.02352905273438,
+      190.771240234375,
+      191.2941131591797
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-203.1-6.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 39,
+        "green": 0
+      },
+      377
+    ],
+    "thirds_brightness": [
+      184.46923828125,
+      160.76922607421875,
+      166.05128479003906
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-209.6-0.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 1649,
+        "green": 0
+      },
+      15548
+    ],
+    "thirds_brightness": [
+      179.18115234375,
+      180.2804718017578,
+      175.59336853027344
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-209.6-1.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      2590
+    ],
+    "thirds_brightness": [
+      198.8662872314453,
+      183.24685668945312,
+      181.01785278320312
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-209.6-2.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      1647
+    ],
+    "thirds_brightness": [
+      208.09170532226562,
+      176.82408142089844,
+      151.17591857910156
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-209.6-3.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      2400
+    ],
+    "thirds_brightness": [
+      193.44363403320312,
+      202.5208282470703,
+      196.9752655029297
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-226.6-0.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 49
+      },
+      600
+    ],
+    "thirds_brightness": [
+      168.42381286621094,
+      158.07179260253906,
+      231.3333282470703
+    ],
+    "lamp_by_position": "green",
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "ida-226.6-1.png",
+    "lit_pixel_counts": [
+      {
+        "red": 90,
+        "yellow": 0,
+        "green": 0
+      },
+      640
+    ],
+    "thirds_brightness": [
+      216.60267639160156,
+      160.6298065185547,
+      163.91827392578125
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-226.6-2.png",
+    "lit_pixel_counts": [
+      {
+        "red": 73,
+        "yellow": 0,
+        "green": 0
+      },
+      546
+    ],
+    "thirds_brightness": [
+      222.6977996826172,
+      160.13186645507812,
+      168.93406677246094
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-226.6-3.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 27
+      },
+      560
+    ],
+    "thirds_brightness": [
+      178.2397918701172,
+      152.92857360839844,
+      196.8351593017578
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "ida-226.6-4.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      598
+    ],
+    "thirds_brightness": [
+      172.3076934814453,
+      130.8153839111328,
+      144.38973999023438
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-228.6-0.png",
+    "lit_pixel_counts": [
+      {
+        "red": 84,
+        "yellow": 0,
+        "green": 0
+      },
+      560
+    ],
+    "thirds_brightness": [
+      212.31121826171875,
+      145.4725341796875,
+      158.35165405273438
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-228.6-1.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      570
+    ],
+    "thirds_brightness": [
+      168.44615173339844,
+      168.76409912109375,
+      164.95555114746094
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-228.6-2.png",
+    "lit_pixel_counts": [
+      {
+        "red": 73,
+        "yellow": 0,
+        "green": 0
+      },
+      546
+    ],
+    "thirds_brightness": [
+      233.58790588378906,
+      168.90109252929688,
+      174.8131866455078
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-228.6-3.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 35
+      },
+      624
+    ],
+    "thirds_brightness": [
+      192.08653259277344,
+      171.58172607421875,
+      211.97596740722656
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "ida-231.4-0.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 90
+      },
+      560
+    ],
+    "thirds_brightness": [
+      159.33673095703125,
+      148.3296661376953,
+      226.3241729736328
+    ],
+    "lamp_by_position": "green",
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "ida-231.4-1.png",
+    "lit_pixel_counts": [
+      {
+        "red": 67,
+        "yellow": 0,
+        "green": 0
+      },
+      600
+    ],
+    "thirds_brightness": [
+      222.39047241210938,
+      157.05128479003906,
+      169.09744262695312
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-231.4-2.png",
+    "lit_pixel_counts": [
+      {
+        "red": 76,
+        "yellow": 0,
+        "green": 0
+      },
+      574
+    ],
+    "thirds_brightness": [
+      206.7653045654297,
+      136.39796447753906,
+      146.5164794921875
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-231.4-3.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 30
+      },
+      546
+    ],
+    "thirds_brightness": [
+      168.41758728027344,
+      148.04945373535156,
+      195.02197265625
+    ],
+    "lamp_by_position": "green",
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "ida-231.4-4.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 236,
+        "green": 0
+      },
+      680
+    ],
+    "thirds_brightness": [
+      169.85000610351562,
+      178.76364135742188,
+      198.91818237304688
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-233.3-0.png",
+    "lit_pixel_counts": [
+      {
+        "red": 85,
+        "yellow": 0,
+        "green": 0
+      },
+      600
+    ],
+    "thirds_brightness": [
+      206.8238067626953,
+      144.1897430419922,
+      151.54872131347656
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-233.3-1.png",
+    "lit_pixel_counts": [
+      {
+        "red": 70,
+        "yellow": 0,
+        "green": 0
+      },
+      585
+    ],
+    "thirds_brightness": [
+      219.9794921875,
+      159.54872131347656,
+      171.10256958007812
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-233.3-2.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      532
+    ],
+    "thirds_brightness": [
+      153.86813354492188,
+      149.8351593017578,
+      150.4345245361328
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-233.3-3.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 34
+      },
+      560
+    ],
+    "thirds_brightness": [
+      177.91326904296875,
+      150.1977996826172,
+      196.8351593017578
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "ida-236.2-0.png",
+    "lit_pixel_counts": [
+      {
+        "red": 109,
+        "yellow": 0,
+        "green": 0
+      },
+      1000
+    ],
+    "thirds_brightness": [
+      210.6676483154297,
+      159.07647705078125,
+      167.03125
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-236.2-1.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      1040
+    ],
+    "thirds_brightness": [
+      166.26666259765625,
+      155.8558807373047,
+      163.6441192626953
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-236.2-2.png",
+    "lit_pixel_counts": [
+      {
+        "red": 120,
+        "yellow": 0,
+        "green": 0
+      },
+      1092
+    ],
+    "thirds_brightness": [
+      194.96031188964844,
+      147.58543395996094,
+      160.41737365722656
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "ida-236.2-3.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 55
+      },
+      900
+    ],
+    "thirds_brightness": [
+      171.34640502929688,
+      148.92156982421875,
+      190.78819274902344
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "ida-236.2-4.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 184,
+        "green": 0
+      },
+      840
+    ],
+    "thirds_brightness": [
+      147.34353637695312,
+      168.57142639160156,
+      162.6593475341797
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "ida-236.2-5.png",
+    "lit_pixel_counts": [
+      {
+        "red": 1,
+        "yellow": 0,
+        "green": 0
+      },
+      1020
+    ],
+    "thirds_brightness": [
+      234.3249969482422,
+      215.95150756835938,
+      220.26060485839844
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": null
+  },
+  {
+    "file": "volta-146.8-0.png",
+    "lit_pixel_counts": [
+      {
+        "red": 31,
+        "yellow": 0,
+        "green": 0
+      },
+      231
+    ],
+    "thirds_brightness": [
+      251.41558837890625,
+      230.55844116210938,
+      230.7662353515625
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "volta-152.2-0.png",
+    "lit_pixel_counts": [
+      {
+        "red": 166,
+        "yellow": 0,
+        "green": 0
+      },
+      969
+    ],
+    "thirds_brightness": [
+      252.8947296142578,
+      216.36842346191406,
+      219.87615966796875
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "volta-152.2-1.png",
+    "lit_pixel_counts": [
+      {
+        "red": 66,
+        "yellow": 0,
+        "green": 0
+      },
+      429
+    ],
+    "thirds_brightness": [
+      252.3426513671875,
+      223.31468200683594,
+      225.0
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "volta-154.3-0.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 72
+      },
+      950
+    ],
+    "thirds_brightness": [
+      224.2476806640625,
+      217.0309600830078,
+      239.5657958984375
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "volta-154.3-1.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 24
+      },
+      403
+    ],
+    "thirds_brightness": [
+      226.9510498046875,
+      218.9923095703125,
+      248.7846221923828
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "volta-154.3-2.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 273,
+        "green": 0
+      },
+      638
+    ],
+    "thirds_brightness": [
+      254.51364135742188,
+      255.0,
+      254.31817626953125
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  }
+]

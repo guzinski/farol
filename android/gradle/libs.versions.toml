@@ -1,0 +1,21 @@
+[versions]
+agp = "9.5.0"
+kotlin = "2.4.21"
+camera = "1.6.2"
+litert = "1.4.1"
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+
+[libraries]
+activity-compose = { module = "androidx.activity:activity-compose", version = "1.13.0" }
+material3 = { module = "androidx.compose.material3:material3", version = "1.4.0" }
+camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camera" }
+camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camera" }
+camera-video = { module = "androidx.camera:camera-video", version.ref = "camera" }
+camera-view = { module = "androidx.camera:camera-view", version.ref = "camera" }
+litert = { module = "com.google.ai.edge.litert:litert", version.ref = "litert" }
+litert-gpu = { module = "com.google.ai.edge.litert:litert-gpu", version.ref = "litert" }
+junit = { module = "junit:junit", version = "4.13.2" }
+json = { module = "org.json:json", version = "20250517" }

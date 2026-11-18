@@ -10,4 +10,12 @@ images/
 # downloaded models
 *.pt
 *.onnx
+*.tflite
 voices/
+
+# Android local build files
+android/.gradle/
+android/.kotlin/
+android/.idea/
+android/**/build/
+android/local.properties
