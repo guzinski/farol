@@ -7,7 +7,7 @@ import org.json.JSONObject
 class Translator(english: String, selected: String = english) {
     private val fallback = JSONObject(english)
     private val messages = JSONObject(selected)
-    private val parameter = Regex("\\{([^}]+)}")
+    private val parameter = Regex("\\{([^{}]+)\\}")
 
     operator fun invoke(key: String, params: Map<String, String> = emptyMap()): String {
         val template = if (messages.has(key)) messages.getString(key) else fallback.getString(key)
