@@ -15,7 +15,8 @@ import cv2
 import numpy as np
 
 from .perception import (STOP_SIGN, TRAFFIC_LIGHT, Detection, Detector, TrafficLightsByPosition, lamp_by_position,
-                         lit_pixel_counts, red_fraction, thirds_brightness, traffic_light_color)
+                         lit_pixel_counts, red_fraction, seen_from_behind, thirds_brightness,
+                         traffic_light_color)
 
 ROOT = Path(__file__).resolve().parent.parent
 BGR = {"red": (0, 0, 255), "yellow": (0, 220, 255), "green": (0, 200, 0), None: (200, 200, 200)}
@@ -67,6 +68,8 @@ def inspect(path: Path, detector: Detector, out_dir: Path | None) -> Path:
         thirds_txt = "/".join(f"{t:.0f}" for t in thirds) if thirds else "-"
         by_lamp = lamp_by_position(frame, d.box) or "-"
         ignored = " (ignored: low in image)" if y2 >= 0.65 * h else ""
+        if seen_from_behind(frame, d.box):
+            ignored += " (ignored: seen from behind)"
         print(f"  #{i}  {d.color or '?':6s} {d.position:5s}  box {x2 - x1}x{y2 - y1} px at ({x1},{y1})  "
               f"conf {d.conf:.2f}  lit pixels: {counts}  brightness top/mid/bottom: {thirds_txt} "
               f"(lit lamp: {by_lamp}){ignored}")
@@ -92,7 +95,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("images", type=Path, nargs="+")
     p.add_argument("--model", default=str(ROOT / "yolo11s.pt"))
-    p.add_argument("--imgsz", type=int, default=960)
+    p.add_argument("--imgsz", type=int, default=1600)
     p.add_argument("--conf", type=float, default=0.3)
     p.add_argument("--out", type=Path, default=None, help="folder for the annotated images (default: next to each)")
     a = p.parse_args()

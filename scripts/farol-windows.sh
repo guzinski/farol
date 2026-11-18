@@ -6,7 +6,7 @@
 #   py -3.11 -m venv $HOME\.farol\venv
 #   $HOME\.farol\venv\Scripts\python.exe -m pip install ultralytics onnxruntime-directml opencv-python-headless lap
 # and export the model in WSL:
-#   uv run --with onnx --with onnxslim python -c "from ultralytics import YOLO; YOLO('yolo11s.pt').export(format='onnx', imgsz=960)"
+#   uv run --with onnx --with onnxslim python -c "from ultralytics import YOLO; YOLO('yolo11s.pt').export(format='onnx', imgsz=1600)"
 #
 # Usage: scripts/farol-windows.sh <video> [farol options...]
 set -euo pipefail

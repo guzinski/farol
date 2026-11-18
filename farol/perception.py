@@ -59,7 +59,7 @@ def prefer_directml() -> bool:
 
 
 class Detector:
-    def __init__(self, model: str = "yolo11s.pt", imgsz: int = 960, conf: float = 0.3):
+    def __init__(self, model: str = "yolo11s.pt", imgsz: int = 1600, conf: float = 0.3):
         if str(model).endswith(".onnx"):
             prefer_directml()
         self.model = YOLO(model, task="detect")
@@ -84,6 +84,8 @@ class Detector:
 
 def lit_pixel_counts(frame: np.ndarray, box: tuple[int, int, int, int]) -> tuple[dict[str, int], int] | None:
     """Bright, saturated pixels of each lamp hue inside a traffic light box, and the box area.
+    In a vertical light each colour only counts in its own lamp's third (red top, yellow middle,
+    green bottom), so a yellow-painted housing or a reflection does not read as a lit lamp.
     None when the box is too small to read."""
     x1, y1, x2, y2 = box
     crop = frame[max(y1, 0):y2, max(x1, 0):x2]
@@ -92,11 +94,19 @@ def lit_pixel_counts(frame: np.ndarray, box: tuple[int, int, int, int]) -> tuple
     hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
     h, s, v = hsv[..., 0], hsv[..., 1], hsv[..., 2]
     lit = (s > 90) & (v > 160)
-    counts = {
-        "red": int((lit & ((h < 10) | (h > 168))).sum()),
-        "yellow": int((lit & (h >= 14) & (h <= 34)).sum()),
-        "green": int((lit & (h >= 42) & (h <= 98)).sum()),
+    hues = {
+        "red": (h < 10) | (h > 168),
+        "yellow": (h >= 14) & (h <= 34),
+        "green": (h >= 42) & (h <= 98),
     }
+    if crop.shape[0] >= 2 * crop.shape[1]:
+        third = np.zeros(h.shape, dtype=np.uint8)
+        bounds = np.linspace(0, h.shape[0], 4).astype(int)
+        for i in range(3):
+            third[bounds[i]:bounds[i + 1]] = i
+        for i, color in enumerate(hues):
+            hues[color] = hues[color] & (third == i)
+    counts = {color: int((lit & mask).sum()) for color, mask in hues.items()}
     return counts, lit.size
 
 
@@ -127,11 +137,25 @@ def lamp_by_position(frame: np.ndarray, box, min_gap: float = 25) -> str | None:
     return ("red", "yellow", "green")[ranked[0]]
 
 
+def seen_from_behind(frame: np.ndarray, box, max_housing: float = 0.25, min_dark: float = 0.25) -> bool:
+    """True for a light seen from the back or the side. Porto Alegre paints its signal housings
+    yellow: from behind the box is mostly that yellow, while from the front it is the dark face
+    and lamps. Sunlight on a yellow back would otherwise read as a lit lamp."""
+    x1, y1, x2, y2 = box
+    crop = frame[max(y1, 0):y2, max(x1, 0):x2]
+    if crop.size == 0:
+        return False
+    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+    h, s, v = hsv[..., 0], hsv[..., 1], hsv[..., 2]
+    housing = ((h >= 12) & (h <= 35) & (s > 40) & (v > 90)).mean()
+    return housing > max_housing and (v < 90).mean() < min_dark
+
+
 def traffic_light_color(frame: np.ndarray, box: tuple[int, int, int, int]) -> str | None:
     """Classifies the lit lamp by the hue of the bright, saturated pixels, falling back to
     which lamp is lit when the hue is too washed out to tell."""
     read = lit_pixel_counts(frame, box)
-    if read is None:
+    if read is None or seen_from_behind(frame, box):
         return None
     counts, area = read
     color, count = max(counts.items(), key=lambda kv: kv[1])

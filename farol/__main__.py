@@ -130,7 +130,7 @@ def main():
     p.add_argument("--start", type=float, default=0, help="first second to process")
     p.add_argument("--duration", type=float, default=None, help="seconds to process")
     p.add_argument("--model", default=str(ROOT / "yolo11s.pt"))
-    p.add_argument("--imgsz", type=int, default=960)
+    p.add_argument("--imgsz", type=int, default=1600)
     p.add_argument("--horizon", type=float, default=0.55, help="height of the horizon in the image (0-1)")
     p.add_argument("--hood", type=float, default=0.92, help="where the car's hood starts (0-1)")
     p.add_argument("--fps", type=float, default=15, help="frames per second analysed")
