@@ -47,8 +47,10 @@ This checks the float32 NHWC input and raw normalized XYWH output against PyTorc
 
 ## Use and review
 
-- Start a session to turn on live alerts and save the drive. **Ajustes** shows the effective analysis FPS, inference time, and frame size. You can select the analysis resolution, exposure compensation, AE metering, detection band, language, and speech settings before a session.
+- Start a session to turn on live alerts and save the drive. **Ajustes** shows the effective analysis FPS, image preparation time, inference time, and frame size. Use **Testar voz** to check speech before starting a session. You can select the analysis resolution, exposure compensation, AE metering, detection band, language, and speech settings before a session.
+- When analysed frames are more than 160 ms apart, two consecutive matching color readings at the same position can confirm a light. The app clears the previous color on a missing reading or a gap over 1.5 s at that cadence.
 - Select **Reproduzir vídeo** to pick a video from Android's file picker. Replay analyses up to 15 source frames per second. MP4 inputs, including the 10-bit HLG trip videos, are copied as-is for review. Other supported containers are saved as a video-only MP4. Live sessions record video without audio.
+- Open **Histórico** to review saved drives and replays on the phone. Each session shows analysed frames, tracked detections, traffic-light colors, alerts, and the saved video. Tap an alert to jump to its timestamp. Existing sessions appear automatically.
 - Sessions are stored under `/sdcard/Android/media/io.github.guzinski.farol/sessions/<yyyy-MM-dd_HH-mm-ss>/`. They contain `video.mp4`, `alerts.json`, `detections.jsonl`, and `session.json`. Live logs use the camera timestamps relative to the first encoded MP4 sample. Replay logs use decoded media presentation timestamps. `session.json` records both analysis throughput and the sampling rate on the video timeline.
 - Pull sessions and generate subtitles from the repo root.
 

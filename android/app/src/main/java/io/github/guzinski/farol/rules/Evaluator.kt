@@ -39,7 +39,7 @@ class Evaluator {
     fun evaluate(
         t: Double, detections: List<Detection>, width: Int, height: Int, band: Double, activeIds: Set<Int>,
     ): List<Alert> = buildList {
-        val now = lights.update(detections, width, height, band)
+        val now = lights.update(t, detections, width, height, band)
         val before = state
         state = now
         when {

@@ -3,10 +3,10 @@ package io.github.guzinski.farol.session
 import android.content.Context
 import android.os.Build
 import io.github.guzinski.farol.BuildConfig
+import io.github.guzinski.farol.detect.Analysis
 import io.github.guzinski.farol.detect.Detection
 import io.github.guzinski.farol.detect.ModelRunner
 import io.github.guzinski.farol.i18n.Translator
-import io.github.guzinski.farol.rules.Alert
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -23,19 +23,23 @@ class SessionRecorder(val directory: File, private val metadata: JSONObject) {
     private var firstProcessed = 0L
     private var lastProcessed = 0L
     private var frames = 0
+    private var totalPreprocessMs = 0.0
+    private var totalInferenceMs = 0.0
 
-    fun frame(time: Double, width: Int, height: Int, results: List<Detection>, emitted: List<Alert>, translator: Translator) {
+    fun frame(result: Analysis, translator: Translator) {
         lastProcessed = System.nanoTime()
         if (frames == 0) {
-            first = time
+            first = result.time
             firstProcessed = lastProcessed
-            metadata.put("analysis_resolution", JSONArray(listOf(width, height)))
+            metadata.put("analysis_resolution", JSONArray(listOf(result.width, result.height)))
         }
-        last = time
+        last = result.time
         frames++
-        detections.write(JSONObject().put("t", time).put("detections", JSONArray(results.map(::record))).toString())
+        totalPreprocessMs += result.preprocessMs
+        totalInferenceMs += result.inferenceMs
+        detections.write(JSONObject().put("t", result.time).put("detections", JSONArray(result.detections.map(::record))).toString())
         detections.newLine()
-        for (alert in emitted) {
+        for (alert in result.alerts) {
             val params = alert.lights?.let { lights ->
                 JSONObject().put("lights", JSONArray(lights.map { JSONArray(listOf(it.position.key, it.color.key)) }))
             }
@@ -58,6 +62,8 @@ class SessionRecorder(val directory: File, private val metadata: JSONObject) {
                 .put("analysis_fps", if (lastProcessed > firstProcessed) (frames - 1) * 1e9 / (lastProcessed - firstProcessed) else 0)
                 .put("sampled_video_fps", if (last > first) (frames - 1) / (last - first) else 0)
                 .put("analysed_frames", frames)
+                .put("mean_preprocess_ms", if (frames > 0) totalPreprocessMs / frames else JSONObject.NULL)
+                .put("mean_inference_ms", if (frames > 0) totalInferenceMs / frames else JSONObject.NULL)
                 .put("video_duration_s", elapsedSeconds)
                 .put("position_basis", "image x-coordinate")
                 .put("error", error ?: JSONObject.NULL)
@@ -83,9 +89,11 @@ class SessionRecorder(val directory: File, private val metadata: JSONObject) {
     }
 
     companion object {
+        internal fun root(context: Context): File? =
+            context.externalMediaDirs.firstOrNull()?.let { File(it, "sessions") }
+
         fun create(context: Context, metadata: JSONObject): SessionRecorder {
-            val media = checkNotNull(context.externalMediaDirs.firstOrNull()) { "Android/media is unavailable." }
-            val root = File(media, "sessions")
+            val root = checkNotNull(root(context)) { "Android/media is unavailable." }
             check(root.isDirectory || root.mkdirs()) { "Could not create the sessions folder." }
             val format = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.ROOT)
             var time = System.currentTimeMillis()

@@ -53,8 +53,9 @@ fun DebugPanel(controller: FarolController, close: () -> Unit, disclaimer: () ->
                 }
                 val stats = controller.frame
                 Text(stats?.let {
-                    "${decimal(it.fps)} fps  •  ${decimal(it.inferenceMs)} ms  •  ${it.width} × ${it.height}"
+                    "${decimal(it.fps)} fps  •  ${it.width} × ${it.height}"
                 } ?: "Aguardando quadros")
+                stats?.let { Text("Imagem ${decimal(it.preprocessMs)} ms  •  Inferência ${decimal(it.inferenceMs)} ms") }
                 controller.modelMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 if (!enabled) Text("Os ajustes podem ser alterados ao encerrar a sessão.")
                 HorizontalDivider()
@@ -76,6 +77,7 @@ fun DebugPanel(controller: FarolController, close: () -> Unit, disclaimer: () ->
                 Toggle("Alertas por voz", settings.speech, enabled) { controller.change(settings.copy(speech = it)) }
                 SliderSetting("Velocidade da voz", settings.rate, .5f..1.5f, 9, "×", enabled) { controller.change(settings.copy(rate = it)) }
                 Choice(settings.language, listOf("pt-BR", "en"), { it }, enabled) { controller.change(settings.copy(language = it)) }
+                TextButton(onClick = controller::testVoice, enabled = enabled) { Text("Testar voz") }
                 controller.voiceMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 TextButton(onClick = disclaimer) { Text("Aviso de segurança") }
             }

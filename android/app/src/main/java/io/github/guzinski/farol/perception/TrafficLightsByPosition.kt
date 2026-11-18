@@ -15,9 +15,12 @@ sealed interface LightState {
 class TrafficLightsByPosition {
     private val votes = Position.entries.associateWith { ArrayDeque<LampColor?>() }
     private val colors = arrayOfNulls<LampColor>(Position.entries.size)
+    private var previousTime: Double? = null
     val display: List<LampColor?> get() = colors.toList()
 
-    fun update(detections: List<Detection>, width: Int, height: Int, band: Double): LightState? {
+    fun update(t: Double, detections: List<Detection>, width: Int, height: Int, band: Double): LightState? {
+        val gap = previousTime?.let { t - it } ?: 0.0
+        previousTime = t
         val candidates = detections.filter { it.cls == TRAFFIC_LIGHT && it.color != null && it.box.bottom < band * height }
         val minHeight = (candidates.maxOfOrNull { it.box.height } ?: 0) * .5
         val best = mutableMapOf<Position, Detection>()
@@ -33,8 +36,22 @@ class TrafficLightsByPosition {
         }
         for (position in Position.entries) {
             val window = votes.getValue(position)
+            val color = best[position]?.color
+            if (gap > SLOW_FRAME_GAP_SECONDS) {
+                val previous = window.lastOrNull()
+                // Consecutive agreeing frames can confirm a color when frames are sparse.
+                // A missing reading or a long stall clears the last confirmed color.
+                if (color == null || gap > MAX_CONFIRMATION_GAP_SECONDS) {
+                    colors[position.ordinal] = null
+                } else if (color == previous) {
+                    colors[position.ordinal] = color
+                }
+                window.clear()
+                window.addLast(color)
+                continue
+            }
             if (window.size == 9) window.removeFirst()
-            window.addLast(best[position]?.color)
+            window.addLast(color)
             if (window.size == 9) {
                 val winner = window.groupingBy { it }.eachCount().entries.maxBy { it.value }
                 if (winner.value >= 6) colors[position.ordinal] = winner.key
@@ -47,5 +64,10 @@ class TrafficLightsByPosition {
         return if (seen.all { it.color == seen.first().color }) {
             LightState.Single(seen.first().color)
         } else LightState.Mixed(seen)
+    }
+
+    private companion object {
+        const val SLOW_FRAME_GAP_SECONDS = .16
+        const val MAX_CONFIRMATION_GAP_SECONDS = 1.5
     }
 }

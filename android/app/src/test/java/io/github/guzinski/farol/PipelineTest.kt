@@ -9,12 +9,14 @@ import io.github.guzinski.farol.detect.Letterbox
 import io.github.guzinski.farol.detect.STOP_SIGN
 import io.github.guzinski.farol.detect.TRAFFIC_LIGHT
 import io.github.guzinski.farol.detect.YoloOutput
+import io.github.guzinski.farol.detect.YoloInput
 import io.github.guzinski.farol.detect.suppress
 import io.github.guzinski.farol.i18n.Translator
 import io.github.guzinski.farol.perception.DEFAULT_BAND
 import io.github.guzinski.farol.perception.LampColor
 import io.github.guzinski.farol.perception.LightRead
 import io.github.guzinski.farol.perception.LightState
+import io.github.guzinski.farol.perception.Pixels
 import io.github.guzinski.farol.perception.Position
 import io.github.guzinski.farol.perception.PositionedLight
 import io.github.guzinski.farol.perception.TrafficLightsByPosition
@@ -30,25 +32,29 @@ class PipelineTest {
     @Test
     fun votesRequireSixOfNineAndRememberUntilSixNulls() {
         val votes = TrafficLightsByPosition()
+        var frame = 0
+        fun feed(vararg detections: Detection) = votes.update(frame++ / 15.0, detections.toList(), 200, 100, DEFAULT_BAND)
         val left = light(20, LampColor.RED)
         val right = light(160, LampColor.GREEN)
         val small = light(100, LampColor.YELLOW, height = 5)
-        repeat(8) { assertNull(votes.update(listOf(left, right, small), 200, 100, DEFAULT_BAND)) }
+        repeat(8) { assertNull(feed(left, right, small)) }
         assertEquals(LightState.Mixed(listOf(PositionedLight(Position.LEFT, LampColor.RED),
             PositionedLight(Position.RIGHT, LampColor.GREEN))),
-            votes.update(listOf(left, right, small), 200, 100, DEFAULT_BAND))
+            feed(left, right, small))
         assertNull(small.position)
-        repeat(5) { assertEquals(2, (votes.update(emptyList(), 200, 100, DEFAULT_BAND) as LightState.Mixed).lights.size) }
-        assertNull(votes.update(emptyList(), 200, 100, DEFAULT_BAND))
+        repeat(5) { assertEquals(2, (feed() as LightState.Mixed).lights.size) }
+        assertNull(feed())
     }
 
     @Test
     fun votesAllowThreeMissesAndRequireFullWindow() {
         val votes = TrafficLightsByPosition()
+        var frame = 0
+        fun feed(vararg detections: Detection) = votes.update(frame++ / 15.0, detections.toList(), 200, 100, DEFAULT_BAND)
         val ahead = light(100, LampColor.YELLOW)
-        repeat(3) { assertNull(votes.update(emptyList(), 200, 100, DEFAULT_BAND)) }
-        repeat(5) { assertNull(votes.update(listOf(ahead), 200, 100, DEFAULT_BAND)) }
-        assertEquals(LightState.Single(LampColor.YELLOW), votes.update(listOf(ahead), 200, 100, DEFAULT_BAND))
+        repeat(3) { assertNull(feed()) }
+        repeat(5) { assertNull(feed(ahead)) }
+        assertEquals(LightState.Single(LampColor.YELLOW), feed(ahead))
     }
 
     @Test
@@ -65,17 +71,36 @@ class PipelineTest {
     @Test
     fun evaluatorEmitsRedThenGreenAndOneStopAtFourthSighting() {
         val evaluator = Evaluator()
-        fun analyse(t: Int, vararg ds: Detection) = evaluator.evaluate(t.toDouble(), ds.toList(), 200, 100, DEFAULT_BAND, setOf(1))
+        var frame = 0
+        fun analyse(vararg ds: Detection) = evaluator.evaluate(frame++ / 15.0, ds.toList(), 200, 100, DEFAULT_BAND, setOf(1))
         val red = light(100, LampColor.RED)
         val green = light(100, LampColor.GREEN)
-        repeat(8) { assertTrue(analyse(it, red).isEmpty()) }
-        assertEquals("traffic_light.red", analyse(8, red).single().key)
-        repeat(5) { assertTrue(analyse(9 + it, green).isEmpty()) }
-        assertEquals("traffic_light.turned_green", analyse(14, green).single().key)
+        repeat(8) { assertTrue(analyse(red).isEmpty()) }
+        assertEquals("traffic_light.red", analyse(red).single().key)
+        repeat(40) { assertTrue(analyse(red).isEmpty()) }
+        repeat(5) { assertTrue(analyse(green).isEmpty()) }
+        assertEquals("traffic_light.turned_green", analyse(green).single().key)
+        repeat(30) { assertTrue(analyse().isEmpty()) }
         val stop = Detection(STOP_SIGN, .70f, Box(20, 10, 40, 30), id = 1).apply { redFraction = .5 }
-        repeat(3) { assertTrue(analyse(16 + it, stop).isEmpty()) }
-        assertEquals("sign.stop", analyse(19, stop).single().key)
-        assertTrue(analyse(30, stop).isEmpty())
+        repeat(3) { assertTrue(analyse(stop).isEmpty()) }
+        assertEquals("sign.stop", analyse(stop).single().key)
+        assertTrue(analyse(stop).isEmpty())
+    }
+
+    @Test
+    fun slowFramesRequireTwoMatchingReadsAndClearAfterStalls() {
+        val votes = TrafficLightsByPosition()
+        val green = light(100, LampColor.GREEN)
+        val red = light(100, LampColor.RED)
+        fun feed(t: Double, vararg ds: Detection) = votes.update(t, ds.toList(), 200, 100, DEFAULT_BAND)
+        assertNull(feed(57.22))
+        assertNull(feed(58.35, green))
+        assertEquals(LightState.Single(LampColor.GREEN), feed(59.49, green))
+        assertNull(feed(60.62))
+        assertNull(feed(76.52, green))
+        assertNull(feed(77.65, red))
+        assertNull(feed(80.0, red))
+        assertEquals(LightState.Single(LampColor.RED), feed(81.1, red))
     }
 
     @Test
@@ -122,6 +147,23 @@ class PipelineTest {
             assertEquals(TRAFFIC_LIGHT, detection.cls)
             assertEquals(Box(75, 25, 125, 75), detection.box)
         }
+    }
+
+    @Test
+    fun modelInputResetsPaddingWhenReusingItsBuffer() {
+        val input = YoloInput(2, 2)
+        val frame = object : Pixels {
+            override val width = 2
+            override val height = 2
+            override fun rgb(x: Int, y: Int) = 0xff8000
+        }
+        input.prepare(frame, Letterbox(2, 2, 2, 2))
+        val next = input.prepare(frame, Letterbox(2, 1, 2, 2)).asFloatBuffer()
+        assertArrayEquals(
+            floatArrayOf(1f, 128 / 255f, 0f, 1f, 128 / 255f, 0f) + FloatArray(6) { 114 / 255f },
+            FloatArray(12) { next.get(it) },
+            0f,
+        )
     }
 
     @Test

@@ -24,6 +24,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -78,13 +79,15 @@ fun FarolApp(
     var showDisclaimer by remember { mutableStateOf(false) }
     MaterialTheme(colorScheme = scheme) {
         val op = controller.operation
-        BackHandler(enabled = debug || controller.replay) {
+        BackHandler(enabled = !controller.viewingHistory && (debug || controller.replay)) {
             if (debug) debug = false
             else if (op == Operation.REPLAYING) controller.stopReplay()
             else if (op == Operation.IDLE) controller.returnToDrive()
         }
-        Box(Modifier.fillMaxSize().background(Color(0xFF090D0E))) {
-            if (accepted) {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            if (accepted && controller.viewingHistory) {
+                HistoryScreen { controller.showHistory(false) }
+            } else if (accepted) {
                 DriveScreen(controller, cameraGranted, requestCamera, chooseVideo) { debug = true }
                 if (debug) DebugPanel(controller, close = { debug = false }, disclaimer = { showDisclaimer = true })
             }
@@ -161,6 +164,7 @@ private fun DriveScreen(
         Row(Modifier.align(Alignment.TopEnd).padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (replay) Button(onClick = controller::returnToDrive, enabled = op == Operation.IDLE) { Text("Câmera") }
             else Button(onClick = chooseVideo, enabled = op == Operation.IDLE && controller.modelReady) { Text("Reproduzir vídeo") }
+            Button(onClick = { controller.showHistory(true) }, enabled = op == Operation.IDLE) { Text("Histórico") }
             Button(onClick = openDebug) { Text("Ajustes") }
         }
 
@@ -180,6 +184,9 @@ private fun DriveScreen(
                     Button(onClick = controller::startDrive, enabled = controller.cameraReady && controller.modelReady) {
                         Text("Iniciar sessão", Modifier.padding(horizontal = 12.dp, vertical = 5.dp))
                     }
+                    if (controller.cameraReady && controller.modelReady && controller.settings.speech) {
+                        Tag("Os alertas por voz começam ao iniciar a sessão.")
+                    }
                 }
                 Operation.STARTING, Operation.RECORDING ->
                     Button(onClick = controller::stopDrive, colors = ButtonDefaults.buttonColors(containerColor = Red, contentColor = Color.Black)) {
@@ -197,7 +204,7 @@ private fun Tag(text: String, color: Color = Color.White) {
     Text(text, Modifier.background(Panel, RoundedCornerShape(8.dp)).padding(horizontal = 12.dp, vertical = 8.dp), color = color)
 }
 
-private fun formatTime(time: Double): String {
+internal fun formatTime(time: Double): String {
     val seconds = time.toInt().coerceAtLeast(0)
     return "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
 }

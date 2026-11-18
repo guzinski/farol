@@ -21,6 +21,7 @@ import androidx.core.content.edit
 import io.github.guzinski.farol.camera.DriveCamera
 import io.github.guzinski.farol.camera.VideoTimeline
 import io.github.guzinski.farol.camera.YuvFrame
+import io.github.guzinski.farol.camera.YuvPlaneBuffers
 import io.github.guzinski.farol.camera.thumbnail
 import io.github.guzinski.farol.detect.Analysis
 import io.github.guzinski.farol.detect.Backend
@@ -103,6 +104,8 @@ class FarolController(private val activity: ComponentActivity) {
         private set
     var replay by mutableStateOf(false)
         private set
+    var viewingHistory by mutableStateOf(false)
+        private set
     var frame by mutableStateOf<Analysis?>(null)
         private set
     var videoFrame by mutableStateOf<Bitmap?>(null)
@@ -124,6 +127,7 @@ class FarolController(private val activity: ComponentActivity) {
     private var pipeline: Pipeline? = null
     private var liveTranslator = Translator.load(context.assets, settings.language)
     private var gate = FrameGate()
+    private val cameraBuffers = YuvPlaneBuffers()
     private var previewOrigin: Long? = null
     private var drive: DriveLog? = null
 
@@ -225,7 +229,7 @@ class FarolController(private val activity: ComponentActivity) {
 
     private fun bindCamera() {
         val activeProvider = provider ?: return
-        if (!permitted || !foreground || replay || closed) return
+        if (!permitted || !foreground || replay || viewingHistory || closed) return
         if (camera != null && operation != Operation.IDLE) return
         unbindCamera()
         val generation = cameraGeneration
@@ -276,7 +280,7 @@ class FarolController(private val activity: ComponentActivity) {
                 previewOrigin ?: timestamp.also { previewOrigin = it }
             } else log.timeline.startNs
             if (origin < 0 || timestamp + 1_000 < origin || !gate.accept(timestamp)) return
-            val result = processor.analyse(YuvFrame.camera(image), (timestamp - origin).coerceAtLeast(0) / 1e9)
+            val result = processor.analyse(YuvFrame.camera(image, cameraBuffers), (timestamp - origin).coerceAtLeast(0) / 1e9)
             if (log != null) {
                 log.enqueue(timestamp, result)
                 log.drain()
@@ -412,7 +416,7 @@ class FarolController(private val activity: ComponentActivity) {
                     val wait = (start + timestamp - System.nanoTime()) / 1_000_000
                     if (wait > 0) Thread.sleep(wait.coerceAtMost(70))
                     if (!cancelled.get()) {
-                        file.frame(result.time, result.width, result.height, result.detections, result.alerts, translator)
+                        file.frame(result, translator)
                         val text = result.alerts.lastOrNull()?.let(translator::alert)
                         main.post {
                             if (replayCancel === cancelled && !cancelled.get()) {
@@ -443,6 +447,23 @@ class FarolController(private val activity: ComponentActivity) {
         operation = Operation.SAVING
     }
 
+    fun showHistory(visible: Boolean) {
+        if (visible == viewingHistory || operation != Operation.IDLE) return
+        viewingHistory = visible
+        if (visible) {
+            speaker.stop()
+            unbindCamera()
+        } else {
+            bindCamera()
+        }
+    }
+
+    fun testVoice() {
+        if (operation != Operation.IDLE) return
+        val phrase = Translator.load(context.assets, settings.language)("traffic_light.green")
+        speaker.speak(phrase, settings.rate)
+    }
+
     fun returnToDrive() {
         if (operation != Operation.IDLE) return
         replay = false
@@ -470,6 +491,7 @@ class FarolController(private val activity: ComponentActivity) {
 
     private fun metadata(mode: String, config: Settings) = JSONObject().put("mode", mode)
         .put("detection_band", config.band).put("language", config.language)
+        .put("speech_enabled", config.speech)
         .put("exposure_ev", if (mode == "drive") config.exposure else JSONObject.NULL)
         .put("meter_on_lights", if (mode == "drive") config.meter else JSONObject.NULL)
 
@@ -512,7 +534,7 @@ class FarolController(private val activity: ComponentActivity) {
             val end = timeline.endNs
             while (pending.isNotEmpty() && pending.first().first <= end + 1_000) {
                 val (_, frame) = pending.removeFirst()
-                session.frame(frame.time, frame.width, frame.height, frame.detections, frame.alerts, translator)
+                session.frame(frame, translator)
             }
         }
     }

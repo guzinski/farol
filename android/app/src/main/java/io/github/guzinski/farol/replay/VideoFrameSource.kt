@@ -10,6 +10,7 @@ import android.media.MediaMuxer
 import android.net.Uri
 import io.github.guzinski.farol.camera.YuvFrame
 import io.github.guzinski.farol.camera.YuvMatrix
+import io.github.guzinski.farol.camera.YuvPlaneBuffers
 import io.github.guzinski.farol.detect.FrameGate
 import java.io.File
 import java.nio.ByteBuffer
@@ -102,6 +103,7 @@ class VideoFrameSource(private val context: Context, private val uri: Uri) {
             codec.start()
             val info = MediaCodec.BufferInfo()
             val gate = FrameGate()
+            val planeBuffers = YuvPlaneBuffers()
             var inputEnded = false
             var lastPts = 0L
             var progressAt = System.nanoTime()
@@ -141,7 +143,7 @@ class VideoFrameSource(private val context: Context, private val uri: Uri) {
                             }
                             val range = colors.getInteger(MediaFormat.KEY_COLOR_RANGE, format.getInteger(MediaFormat.KEY_COLOR_RANGE, 0))
                             checkNotNull(codec.getOutputImage(index)) { "O decodificador não disponibilizou quadros YUV." }.use { image ->
-                                frame(ns, YuvFrame.decoder(image, rotation, range == MediaFormat.COLOR_RANGE_FULL, matrix))
+                                frame(ns, YuvFrame.decoder(image, rotation, range == MediaFormat.COLOR_RANGE_FULL, matrix, planeBuffers))
                             }
                         }
                     }

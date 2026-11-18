@@ -15,6 +15,7 @@ data class Analysis(
     val lights: List<LampColor?>,
     val alerts: List<Alert>,
     val fps: Double,
+    val preprocessMs: Double,
     val inferenceMs: Double,
 )
 
@@ -47,6 +48,7 @@ class Pipeline(private val runner: ModelRunner, private val band: Double) {
         recent.addLast(System.nanoTime())
         if (recent.size > 30) recent.removeFirst()
         val fps = if (recent.size > 1) (recent.size - 1) * 1e9 / (recent.last() - recent.first()) else 0.0
-        return Analysis(frame.width, frame.height, t, detections, evaluator.display, emitted, fps, runner.inferenceMs)
+        return Analysis(frame.width, frame.height, t, detections, evaluator.display, emitted, fps,
+            runner.preprocessMs, runner.inferenceMs)
     }
 }

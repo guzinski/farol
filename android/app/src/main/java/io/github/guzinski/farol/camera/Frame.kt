@@ -10,13 +10,25 @@ import androidx.camera.core.ImageProxy
 import io.github.guzinski.farol.detect.Box
 import io.github.guzinski.farol.perception.Pixels
 import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import kotlin.math.roundToInt
 
 enum class YuvMatrix(val redV: Double, val greenU: Double, val greenV: Double, val blueU: Double) {
     BT601(1.402, .344136, .714136, 1.772),
     BT709(1.5748, .187324, .468124, 1.8556),
     BT2020(1.4746, .164553, .571353, 1.8814),
+}
+
+// One owner per analysis thread. Each frame is consumed before the next frame reuses these arrays.
+internal class YuvPlaneBuffers {
+    private val planes = Array(3) { ByteArray(0) }
+
+    fun copy(index: Int, source: ByteBuffer): ByteArray {
+        val bytes = source.remaining()
+        val target = planes[index].takeIf { it.size >= bytes }
+            ?: ByteArray(bytes).also { planes[index] = it }
+        source.duplicate().get(target, 0, bytes)
+        return target
+    }
 }
 
 class YuvFrame private constructor(
@@ -29,12 +41,11 @@ class YuvFrame private constructor(
     tenBit: Boolean,
     matrix: YuvMatrix,
 ) : Pixels {
-    private class Plane(buffer: ByteBuffer, private val row: Int, private val pixel: Int, private val tenBit: Boolean) {
-        private val data = if (tenBit) buffer.duplicate().order(ByteOrder.LITTLE_ENDIAN) else buffer
-        private val start = data.position()
+    private class Plane(private val data: ByteArray, private val row: Int, private val pixel: Int, private val tenBit: Boolean) {
         fun at(x: Int, y: Int): Int {
-            val offset = start + y * row + x * pixel
-            return if (tenBit) (data.getShort(offset).toInt() and 0xffff) shr 6 else data.get(offset).toInt() and 255
+            val offset = y * row + x * pixel
+            val low = data[offset].toInt() and 255
+            return if (tenBit) ((data[offset + 1].toInt() and 255) shl 2) or (low shr 6) else low
         }
     }
 
@@ -78,8 +89,10 @@ class YuvFrame private constructor(
         private const val GAIN = 1 shl SHIFT
 
         @androidx.annotation.OptIn(ExperimentalGetImage::class)
-        fun camera(image: ImageProxy): YuvFrame {
-            val planes = image.planes.map { Plane(it.buffer, it.rowStride, it.pixelStride, false) }
+        internal fun camera(image: ImageProxy, buffers: YuvPlaneBuffers): YuvFrame {
+            val planes = image.planes.mapIndexed { index, plane ->
+                Plane(buffers.copy(index, plane.buffer), plane.rowStride, plane.pixelStride, false)
+            }
             val space = image.image?.dataSpace ?: DataSpace.DATASPACE_UNKNOWN
             val matrix = when (space) {
                 DataSpace.DATASPACE_BT709 -> YuvMatrix.BT709
@@ -94,10 +107,12 @@ class YuvFrame private constructor(
             )
         }
 
-        fun decoder(image: Image, rotation: Int, fullRange: Boolean, matrix: YuvMatrix): YuvFrame {
+        internal fun decoder(image: Image, rotation: Int, fullRange: Boolean, matrix: YuvMatrix, buffers: YuvPlaneBuffers): YuvFrame {
             val tenBit = image.format == ImageFormat.YCBCR_P010
             require(tenBit || image.format == ImageFormat.YUV_420_888) { "Formato YUV indisponível: ${image.format}." }
-            val planes = image.planes.map { Plane(it.buffer, it.rowStride, it.pixelStride, tenBit) }
+            val planes = image.planes.mapIndexed { index, plane ->
+                Plane(buffers.copy(index, plane.buffer), plane.rowStride, plane.pixelStride, tenBit)
+            }
             return YuvFrame(planes[0], planes[1], planes[2], image.cropRect, rotation, fullRange, tenBit, matrix)
         }
     }

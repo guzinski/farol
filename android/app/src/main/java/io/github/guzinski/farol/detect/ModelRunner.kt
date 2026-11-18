@@ -12,6 +12,7 @@ interface ModelRunner : Closeable {
     val backend: String
     val width: Int
     val height: Int
+    val preprocessMs: Double
     val inferenceMs: Double
     fun detect(frame: Pixels, band: Double): List<Detection>
 }
@@ -36,6 +37,7 @@ internal class Letterbox(frameWidth: Int, val bandHeight: Int, modelWidth: Int, 
 internal class YoloInput(private val width: Int, private val height: Int) {
     private val buffer = ByteBuffer.allocateDirect(width * height * 3 * Float.SIZE_BYTES).order(ByteOrder.nativeOrder())
     private val floats = buffer.asFloatBuffer()
+    private val pixels = FloatArray(width * height * 3)
     private val normalized = FloatArray(256) { it / 255f }
 
     private class Axis(source: Int, target: Int) {
@@ -48,21 +50,16 @@ internal class YoloInput(private val width: Int, private val height: Int) {
     fun prepare(frame: Pixels, transform: Letterbox): ByteBuffer {
         val xAxis = Axis(frame.width, transform.width)
         val yAxis = Axis(transform.bandHeight, transform.height)
-        floats.clear()
-        for (y in 0 until height) {
-            val row = y - transform.top
-            for (x in 0 until width) {
-                val col = x - transform.left
-                if (row !in 0 until transform.height || col !in 0 until transform.width) {
-                    repeat(3) { floats.put(normalized[114]) }
-                    continue
-                }
+        pixels.fill(normalized[114])
+        for (row in 0 until transform.height) {
+            val y0 = yAxis.lower[row]
+            val y1 = yAxis.upper[row]
+            val fy = yAxis.fraction[row]
+            var offset = ((row + transform.top) * width + transform.left) * 3
+            for (col in 0 until transform.width) {
                 val x0 = xAxis.lower[col]
                 val x1 = xAxis.upper[col]
                 val fx = xAxis.fraction[col]
-                val y0 = yAxis.lower[row]
-                val y1 = yAxis.upper[row]
-                val fy = yAxis.fraction[row]
                 val topLeft = frame.rgb(x0, y0)
                 val topRight = frame.rgb(x1, y0)
                 val bottomLeft = frame.rgb(x0, y1)
@@ -74,10 +71,12 @@ internal class YoloInput(private val width: Int, private val height: Int) {
                     val d = (bottomRight shr shift) and 255
                     val top = a + (b - a) * fx
                     val bottom = c + (d - c) * fx
-                    floats.put(normalized[(top + (bottom - top) * fy).roundToInt()])
+                    pixels[offset++] = normalized[(top + (bottom - top) * fy).roundToInt()]
                 }
             }
         }
+        floats.clear()
+        floats.put(pixels)
         buffer.rewind()
         return buffer
     }

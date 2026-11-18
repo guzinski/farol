@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import android.util.Log
 import java.util.Locale
 
 class Speaker(context: Context, private val onMessage: (String?) -> Unit) : AutoCloseable {
@@ -25,22 +26,29 @@ class Speaker(context: Context, private val onMessage: (String?) -> Unit) : Auto
     private var sequence = 0L
     private var current: String? = null
     private var language = "pt-BR"
-    private val tts = TextToSpeech(context.applicationContext) { result ->
+    private val tts: TextToSpeech = TextToSpeech(context.applicationContext) { result ->
         main.post {
             if (closed) return@post
             initialized = result == TextToSpeech.SUCCESS
-            if (initialized) configureLanguage()
-            else onMessage("Ative um mecanismo nas configurações de texto para fala do Android.")
+            if (initialized) {
+                tts.setAudioAttributes(attributes)
+                configureLanguage()
+            } else onMessage("Ative um mecanismo nas configurações de texto para fala do Android.")
         }
     }
 
     init {
-        tts.setAudioAttributes(attributes)
         tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-            override fun onStart(utteranceId: String) = Unit
-            override fun onDone(utteranceId: String) = finished(utteranceId)
+            override fun onStart(utteranceId: String) {
+                Log.i(TAG, "Speech started (utterance $utteranceId)")
+            }
+            override fun onDone(utteranceId: String) {
+                Log.i(TAG, "Speech completed (utterance $utteranceId)")
+                finished(utteranceId)
+            }
             @Deprecated("Android callback")
-            override fun onError(utteranceId: String) = finished(utteranceId)
+            override fun onError(utteranceId: String) = failed(utteranceId, TextToSpeech.ERROR)
+            override fun onError(utteranceId: String, errorCode: Int) = failed(utteranceId, errorCode)
             override fun onStop(utteranceId: String, interrupted: Boolean) = finished(utteranceId)
         })
     }
@@ -59,19 +67,37 @@ class Speaker(context: Context, private val onMessage: (String?) -> Unit) : Auto
     }
 
     fun speak(text: String, rate: Float) {
-        if (!ready || closed) return
-        if (current == null && audio.requestAudioFocus(focus) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return
+        if (closed) return
+        if (!ready) {
+            Log.w(TAG, "Speech unavailable (language $language, engine initialized $initialized)")
+            if (!initialized) onMessage("O mecanismo de voz ainda não está disponível.")
+            return
+        }
+        if (current == null && audio.requestAudioFocus(focus) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            Log.w(TAG, "Audio focus request denied")
+            onMessage("O Android não liberou a saída de áudio para o alerta.")
+            return
+        }
+        onMessage(null)
         tts.setSpeechRate(rate)
         val id = (++sequence).toString()
         current = id
-        if (tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, id) == TextToSpeech.ERROR) finished(id)
+        if (tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, id) == TextToSpeech.ERROR) failed(id, TextToSpeech.ERROR)
     }
 
-    private fun finished(id: String) {
+    private fun failed(id: String, errorCode: Int) {
+        Log.w(TAG, "Speech failed (utterance $id, code $errorCode)")
+        finish(id, "Falha ao reproduzir a voz (código $errorCode).")
+    }
+
+    private fun finished(id: String) = finish(id, null)
+
+    private fun finish(id: String, message: String?) {
         main.post {
             if (current == id) {
                 current = null
                 audio.abandonAudioFocusRequest(focus)
+                onMessage(message)
             }
         }
     }
@@ -86,5 +112,9 @@ class Speaker(context: Context, private val onMessage: (String?) -> Unit) : Auto
         closed = true
         stop()
         tts.shutdown()
+    }
+
+    private companion object {
+        const val TAG = "FarolSpeech"
     }
 }

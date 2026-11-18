@@ -51,6 +51,8 @@ class LiteRtRunner(context: Context, model: ModelFile, engine: Backend) : ModelR
     override val height: Int
     private val input: YoloInput
     private val output: YoloOutput
+    override var preprocessMs = 0.0
+        private set
     override var inferenceMs = 0.0
         private set
 
@@ -83,9 +85,11 @@ class LiteRtRunner(context: Context, model: ModelFile, engine: Backend) : ModelR
     }
 
     override fun detect(frame: Pixels, band: Double): List<Detection> {
+        val prepareStart = System.nanoTime()
         val transform = Letterbox(frame.width, (frame.height * band).toInt().coerceIn(1, frame.height), width, height)
         val prepared = input.prepare(frame, transform)
         val start = System.nanoTime()
+        preprocessMs = (start - prepareStart) / 1e6
         interpreter.run(prepared, output.buffer.rewind())
         inferenceMs = (System.nanoTime() - start) / 1e6
         return output.decode(frame.width, frame.height, transform)
