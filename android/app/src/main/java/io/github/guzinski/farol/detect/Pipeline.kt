@@ -18,7 +18,11 @@ data class Analysis(
     val preprocessMs: Double,
     val inferenceMs: Double,
     val frameMs: Double = preprocessMs + inferenceMs,
+    val uncolored: List<LightCrop> = emptyList(),
 )
+
+/** Packed RGB pixels of a traffic light the colour reader could not classify, kept for review. */
+class LightCrop(val box: Box, val width: Int, val height: Int, val pixels: IntArray)
 
 class FrameGate {
     private var next = Long.MIN_VALUE
@@ -46,11 +50,24 @@ class Pipeline(private val runner: ModelRunner, private val band: Double) {
             if (detection.cls == TRAFFIC_LIGHT) detection.light = LightColor.read(crop)
             else if (detection.cls == STOP_SIGN) detection.redFraction = LightColor.redFraction(crop)
         }
+        val uncolored = detections.asSequence()
+            .filter { it.cls == TRAFFIC_LIGHT && it.color == null && it.box.height >= 8 && it.box.bottom < band * frame.height }
+            .take(MAX_CROPS_PER_FRAME)
+            .map { detection ->
+                val crop = frame.crop(detection.box)
+                LightCrop(detection.box, crop.width, crop.height, IntArray(crop.width * crop.height) {
+                    crop.rgb(it % crop.width, it / crop.width)
+                })
+            }.toList()
         val emitted = evaluator.evaluate(t, detections, frame.width, frame.height, band, tracker.activeIds)
         recent.addLast(System.nanoTime())
         if (recent.size > 30) recent.removeFirst()
         val fps = if (recent.size > 1) (recent.size - 1) * 1e9 / (recent.last() - recent.first()) else 0.0
         return Analysis(frame.width, frame.height, t, detections, evaluator.display, emitted, fps,
-            runner.preprocessMs, runner.inferenceMs, (System.nanoTime() - start) / 1e6)
+            runner.preprocessMs, runner.inferenceMs, (System.nanoTime() - start) / 1e6, uncolored)
+    }
+
+    private companion object {
+        const val MAX_CROPS_PER_FRAME = 4
     }
 }

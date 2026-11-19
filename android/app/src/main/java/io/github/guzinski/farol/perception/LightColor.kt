@@ -63,6 +63,10 @@ object LightColor {
     private const val BRIGHTNESS_GAP = 25
     private const val STOP_SATURATION = 80
     private const val STOP_VALUE = 60
+    private const val FAINT_SATURATION = 35
+    private const val FAINT_VALUE = 100
+    private const val FAINT_FRACTION = .08
+    private const val FAINT_SPREAD = 4
 
     // OpenCV's 8-bit conversion uses fixed-point reciprocal tables.
     private const val HSV_SHIFT = 12
@@ -100,6 +104,8 @@ object LightColor {
         val brightness = LongArray(3)
         var housing = 0
         var dark = 0
+        var faintBottom = 0
+        var faintUpper = 0
         for (y in 0 until height) {
             val lamp = if (y < bounds[0]) 0 else if (y < bounds[1]) 1 else 2
             val third = if (y < rows[0]) 0 else if (y < rows[0] + rows[1]) 1 else 2
@@ -107,6 +113,9 @@ object LightColor {
                 brightness[third] += v.toLong()
                 if (v < HOUSING_VALUE) dark++
                 if (h in HOUSING_HUE && s > HOUSING_SATURATION && v > HOUSING_VALUE) housing++
+                if (vertical && h in GREEN && s >= FAINT_SATURATION && v >= FAINT_VALUE) {
+                    if (lamp == 2) faintBottom++ else faintUpper++
+                }
                 if (s > LIT_SATURATION && v > LIT_VALUE) {
                     if (red(h) && (!vertical || lamp == 0)) lit[0]++
                     if (h in YELLOW && (!vertical || lamp == 1)) lit[1]++
@@ -124,7 +133,7 @@ object LightColor {
         } else null
         val counts = if (height >= MIN_LIT_HEIGHT) LitCounts(lit[0], lit[1], lit[2], area) else null
         val minimum = maxOf(MIN_LIT_PIXELS.toDouble(), MIN_LIT_FRACTION * area)
-        val color = when {
+        val litColor = when {
             counts == null -> null
             // In direct sun the yellow frame around the face of a front-facing light also passes
             // the housing test. Its yellow could still be the housing, but enough lit red or green
@@ -138,6 +147,13 @@ object LightColor {
                 val best = lit.indices.maxBy { lit[it] }
                 if (lit[best] < minimum) lamp else LampColor.entries[best]
             }
+        }
+        // A green lamp the camera renders almost white, such as a green arrow in sun, keeps only
+        // a faint green rim. Leaves or sky behind the box spread over all of it instead.
+        val faintArea = (height - bounds[1]) * width
+        val color = litColor ?: LampColor.GREEN.takeIf {
+            counts != null && vertical && faintBottom >= maxOf(MIN_LIT_PIXELS.toDouble(), FAINT_FRACTION * faintArea) &&
+                FAINT_SPREAD * faintUpper <= faintBottom
         }
         return LightRead(counts, thirds, lamp, behind, color)
     }

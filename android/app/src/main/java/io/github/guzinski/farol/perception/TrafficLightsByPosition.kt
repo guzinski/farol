@@ -1,5 +1,6 @@
 package io.github.guzinski.farol.perception
 
+import io.github.guzinski.farol.detect.Box
 import io.github.guzinski.farol.detect.Detection
 import io.github.guzinski.farol.detect.TRAFFIC_LIGHT
 
@@ -24,15 +25,26 @@ class TrafficLightsByPosition {
         previousTime = t
         val candidates = detections.filter { it.cls == TRAFFIC_LIGHT && it.color != null && it.box.bottom < band * height }
         val minHeight = (candidates.maxOfOrNull { it.box.height } ?: 0) * .5
-        val best = mutableMapOf<Position, Detection>()
-        for (candidate in candidates.filter { it.box.height >= minHeight }) {
+        val kept = candidates.filter { it.box.height >= minHeight }
+        for (candidate in kept) {
             val x = (candidate.box.left + candidate.box.right) / 2.0
-            val position = when {
+            candidate.position = when {
                 x < .38 * width -> Position.LEFT
                 x > .62 * width -> Position.RIGHT
                 else -> Position.AHEAD
             }
-            candidate.position = position
+        }
+        if (kept.none { it.position == Position.LEFT }) {
+            // A turn arrow often hangs beside the main signal, both in front of the car. The left
+            // one of two lights side by side at the same height and size is the left movement.
+            val ahead = kept.filter { it.position == Position.AHEAD }
+            for (light in ahead) {
+                if (ahead.any { it !== light && sideBySide(light.box, it.box) }) light.position = Position.LEFT
+            }
+        }
+        val best = mutableMapOf<Position, Detection>()
+        for (candidate in kept) {
+            val position = candidate.position ?: continue
             if (candidate.box.height > (best[position]?.box?.height ?: 0)) best[position] = candidate
         }
         for (position in Position.entries) {
@@ -72,6 +84,12 @@ class TrafficLightsByPosition {
         return if (seen.all { it.color == seen.first().color }) {
             LightState.Single(seen.first().color)
         } else LightState.Mixed(seen)
+    }
+
+    private fun sideBySide(left: Box, right: Box): Boolean {
+        val overlap = minOf(left.bottom, right.bottom) - maxOf(left.top, right.top)
+        return left.right < right.left && overlap > .5 * minOf(left.height, right.height) &&
+            left.height * 1.5 > right.height && right.height * 1.5 > left.height
     }
 
     private companion object {

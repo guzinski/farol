@@ -1252,5 +1252,81 @@
     "lamp_by_position": "green",
     "seen_from_behind": false,
     "traffic_light_color": "green"
+  },
+  {
+    "file": "android-13-13-49-25.77-782.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      270
+    ],
+    "thirds_brightness": [
+      98.03333282470703,
+      82.43333435058594,
+      97.57777404785156
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "android-13-13-49-26.37-783.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      308
+    ],
+    "thirds_brightness": [
+      90.83636474609375,
+      84.22222137451172,
+      107.0
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "android-10-08-18-49.34-751.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 6
+      },
+      2250
+    ],
+    "thirds_brightness": [
+      135.39332580566406,
+      122.01066589355469,
+      130.1546630859375
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "android-13-13-49-23.40-776.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      171
+    ],
+    "thirds_brightness": [
+      76.33333587646484,
+      66.25926208496094,
+      69.62963104248047
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": false,
+    "traffic_light_color": null
   }
 ]

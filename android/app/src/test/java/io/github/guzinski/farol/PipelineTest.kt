@@ -47,6 +47,33 @@ class PipelineTest {
     }
 
     @Test
+    fun sideBySideLightsAheadSplitIntoLeftAndAhead() {
+        val votes = TrafficLightsByPosition()
+        var frame = 0
+        fun feed(vararg detections: Detection) = votes.update(frame++ / 15.0, detections.toList(), 200, 100, DEFAULT_BAND)
+        // A green turn arrow beside a red main signal, both in the middle of the image.
+        val arrow = light(84, LampColor.GREEN)
+        val main = light(110, LampColor.RED)
+        repeat(8) { feed(arrow, main) }
+        assertEquals(LightState.Mixed(listOf(PositionedLight(Position.LEFT, LampColor.GREEN),
+            PositionedLight(Position.AHEAD, LampColor.RED))), feed(arrow, main))
+        assertEquals(Position.LEFT, arrow.position)
+
+        // With a light already on the left, the two in the middle both stay ahead.
+        val other = TrafficLightsByPosition()
+        val left = light(20, LampColor.RED)
+        val first = light(84, LampColor.GREEN)
+        val second = light(110, LampColor.GREEN)
+        repeat(9) { other.update(it / 15.0, listOf(left, first, second), 200, 100, DEFAULT_BAND) }
+        assertEquals(Position.AHEAD, first.position)
+        // A much shorter light beside it is not the same signal row.
+        val third = TrafficLightsByPosition()
+        val short = light(84, LampColor.GREEN, height = 11)
+        third.update(0.0, listOf(short, light(110, LampColor.RED)), 200, 100, DEFAULT_BAND)
+        assertEquals(Position.AHEAD, short.position)
+    }
+
+    @Test
     fun votesAllowThreeMissesAndRequireFullWindow() {
         val votes = TrafficLightsByPosition()
         var frame = 0

@@ -3,6 +3,7 @@ package io.github.guzinski.farol.session
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Bitmap
 import android.os.BatteryManager
 import android.os.PowerManager
 import android.os.Build
@@ -46,6 +47,8 @@ class SessionRecorder(val directory: File, private val metadata: JSONObject, pri
     private var minHeadroom = Float.NaN
     private var startBattery: Double? = null
     private var lastBattery: Double? = null
+    private var nextCrops = Double.NEGATIVE_INFINITY
+    private var savedCrops = 0
 
     fun frame(result: Analysis, translator: Translator) {
         lastProcessed = System.nanoTime()
@@ -73,6 +76,7 @@ class SessionRecorder(val directory: File, private val metadata: JSONObject, pri
             line.put("thermal_status", status).put("battery_c", battery ?: JSONObject.NULL)
                 .put("thermal_headroom", headroom.takeUnless { it.isNaN() }?.toDouble() ?: JSONObject.NULL)
         }
+        saveCrops(result)
         detections.write(line.put("detections", JSONArray(result.detections.map(::record))).toString())
         detections.newLine()
         for (alert in result.alerts) {
@@ -106,9 +110,29 @@ class SessionRecorder(val directory: File, private val metadata: JSONObject, pri
                 .put("battery_c_start", startBattery ?: JSONObject.NULL)
                 .put("battery_c_end", lastBattery ?: JSONObject.NULL)
                 .put("video_duration_s", elapsedSeconds)
-                .put("position_basis", "image x-coordinate")
+                .put("position_basis", "image x-coordinate; the left of two side-by-side lights ahead counts as left")
+                .put("uncolored_crops", savedCrops)
                 .put("error", error ?: JSONObject.NULL)
             File(directory, "session.json").writeText(metadata.toString(2))
+        }
+    }
+
+    // Crops of lights left without colour, at the analysis resolution, to tune the colour reader
+    // on what the app actually saw. Rate-limited so a long drive stays small.
+    private fun saveCrops(result: Analysis) {
+        if (result.uncolored.isEmpty() || result.time < nextCrops || savedCrops >= MAX_CROPS) return
+        nextCrops = result.time + CROP_INTERVAL_S
+        val folder = File(directory, "crops")
+        if (!folder.isDirectory && !folder.mkdir()) return
+        for (crop in result.uncolored) {
+            if (savedCrops >= MAX_CROPS) break
+            val pixels = IntArray(crop.pixels.size) { crop.pixels[it] or (0xff shl 24) }
+            val bitmap = Bitmap.createBitmap(pixels, crop.width, crop.height, Bitmap.Config.ARGB_8888)
+            val name = String.format(Locale.ROOT, "%08.2f_%d_%d_%d_%d.png", result.time,
+                crop.box.left, crop.box.top, crop.box.right, crop.box.bottom)
+            File(folder, name).outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            bitmap.recycle()
+            savedCrops++
         }
     }
 
@@ -131,6 +155,8 @@ class SessionRecorder(val directory: File, private val metadata: JSONObject, pri
 
     companion object {
         private const val THERMAL_INTERVAL_NS = 2_000_000_000L
+        private const val CROP_INTERVAL_S = .5
+        private const val MAX_CROPS = 400
 
         internal fun root(context: Context): File? =
             context.externalMediaDirs.firstOrNull()?.let { File(it, "sessions") }

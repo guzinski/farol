@@ -49,6 +49,8 @@ This checks the float32 NHWC input and raw normalized XYWH output against PyTorc
 
 - Start a session to turn on live alerts and save the drive. **Ajustes** shows the effective analysis FPS, image preparation time, inference time, and frame size. Use **Testar voz** to check speech before starting a session. You can select the analysis resolution, exposure compensation, AE metering, detection band, language, and speech settings before a session.
 - When analysed frames are more than 160 ms apart, two consecutive matching color readings at the same position can confirm a light. At that cadence the app keeps the confirmed color through one missing reading, which bumps and blur often cause, and clears it after a second missing reading in a row or a gap over 1.5 s.
+- A green lamp the camera renders almost white, such as a green turn arrow in sun, reads as green when at least 8% of the bottom third of a vertical light is faintly green and the upper two thirds hold at most a quarter as many such pixels.
+- Lights are placed left, ahead or right by their x-coordinate in the image. When no light is on the left, the left one of two lights ahead that sit side by side at the same height and size counts as left, since a turn arrow often hangs beside the main signal.
 - Select **Reproduzir vídeo** to pick a video from Android's file picker. Replay analyses up to 15 source frames per second. MP4 inputs, including the 10-bit HLG trip videos, are copied as-is for review. Other supported containers are saved as a video-only MP4. Live sessions record video without audio.
 - Open **Histórico** to review saved drives and replays on the phone. Each session shows analysed frames, tracked detections, traffic-light colors, alerts, and the saved video. Tap an alert to jump to its timestamp. Existing sessions appear automatically.
 - Sessions are stored under `/sdcard/Android/media/io.github.guzinski.farol/sessions/<yyyy-MM-dd_HH-mm-ss>/`. They contain `video.mp4`, `alerts.json`, `detections.jsonl`, and `session.json`. Live logs use the camera timestamps relative to the first encoded MP4 sample. Replay logs use decoded media presentation timestamps. `session.json` records both analysis throughput and the sampling rate on the video timeline.
@@ -69,10 +71,10 @@ Run the checks from `android/` on Windows.
 .\gradlew.bat :app:testDebugUnitTest :app:lintDebug
 ```
 
-The parity test checks OpenCV lamp counts, thirds, brightness fallback, yellow housings and final color on 61 light crops from 13 frames of the two trip videos. To regenerate the fixtures, run the generator from the repo root with the original trip MP4s or source images in a folder.
+The parity test checks OpenCV lamp counts, thirds, brightness fallback, yellow housings and final color on 61 light crops from 13 frames of the two trip videos, plus 9 crops from Android drive recordings: front-facing lights in sun and pale green arrows. To regenerate the fixtures, run the generator from the repo root with the original trip MP4s or source images in a folder.
 
 ```sh
 PYTHONPATH=. uv run python scripts/fixtures.py /path/to/frames-or-trip-videos android/app/src/test/resources/parity
 ```
 
-On the S25+, verify the bound stream combination with `adb logcat -s FarolCamera`, then make a short drive recording. Check `analysis_fps` in `session.json` against the 15 FPS target at 4K. `detections.jsonl` records preparation, inference and total frame times, plus the thermal status, thermal headroom and battery temperature every 2 s. `session.json` summarizes them. Compare subtitles with the recorded video, confirm Portuguese speech, and run both trip videos through replay.
+On the S25+, verify the bound stream combination with `adb logcat -s FarolCamera`, then make a short drive recording. Check `analysis_fps` in `session.json` against the 15 FPS target at 4K. `detections.jsonl` records preparation, inference and total frame times, plus the thermal status, thermal headroom and battery temperature every 2 s. `session.json` summarizes them. The `crops` folder holds up to 400 PNG crops, at most one batch every 0.5 s, of traffic lights the app could not give a color, at the analysis resolution, for tuning the color reader. Compare subtitles with the recorded video, confirm Portuguese speech, and run both trip videos through replay.

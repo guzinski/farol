@@ -151,9 +151,32 @@ def seen_from_behind(frame: np.ndarray, box, max_housing: float = 0.25, min_dark
     return housing > max_housing and (v < 90).mean() < min_dark
 
 
+def pale_green(frame: np.ndarray, box) -> bool:
+    """A green lamp the camera renders almost white, such as a green arrow in sun: only its rim
+    keeps a faint green. Reads it from faint green pixels gathered in the bottom third of a
+    vertical light, while green leaves or sky behind the box spread over all of it."""
+    x1, y1, x2, y2 = box
+    crop = frame[max(y1, 0):y2, max(x1, 0):x2]
+    if crop.size == 0 or crop.shape[0] < 8 or crop.shape[0] < 2 * crop.shape[1]:
+        return False
+    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+    h, s, v = hsv[..., 0], hsv[..., 1], hsv[..., 2]
+    faint = (h >= 42) & (h <= 98) & (s >= 35) & (v >= 100)
+    cut = crop.shape[0] * 2 // 3
+    bottom, upper = int(faint[cut:].sum()), int(faint[:cut].sum())
+    return bottom >= max(4, 0.08 * faint[cut:].size) and 4 * upper <= bottom
+
+
 def traffic_light_color(frame: np.ndarray, box: tuple[int, int, int, int]) -> str | None:
     """Classifies the lit lamp by the hue of the bright, saturated pixels, falling back to
-    which lamp is lit when the hue is too washed out to tell."""
+    which lamp is lit when the hue is too washed out to tell, and then to a pale green lamp."""
+    color = _lit_color(frame, box)
+    if color is None and lit_pixel_counts(frame, box) is not None and pale_green(frame, box):
+        return "green"
+    return color
+
+
+def _lit_color(frame: np.ndarray, box) -> str | None:
     read = lit_pixel_counts(frame, box)
     if read is None:
         return None
@@ -294,9 +317,17 @@ class TrafficLightsByPosition:
             # much smaller lights belong to the next junction, not this one
             tallest = max(s.box[3] - s.box[1] for s in candidates)
             candidates = [s for s in candidates if s.box[3] - s.box[1] >= self.min_relative_height * tallest]
-        best: dict[str, Detection] = {}
         for s in candidates:
             s.position = self._position(s.box)
+        if not any(s.position == "left" for s in candidates):
+            # A turn arrow often hangs beside the main signal, both in front of the car. The left
+            # one of two lights side by side at the same height and size is the left movement.
+            ahead = [s for s in candidates if s.position == "ahead"]
+            for a in ahead:
+                if any(side_by_side(a.box, b.box) for b in ahead if b is not a):
+                    a.position = "left"
+        best: dict[str, Detection] = {}
+        for s in candidates:
             other = best.get(s.position)
             if other is None or s.box[3] - s.box[1] > other.box[3] - other.box[1]:
                 best[s.position] = s
@@ -314,6 +345,14 @@ class TrafficLightsByPosition:
         else:
             self.state = tuple(seen)
         return self.state
+
+
+def side_by_side(left, right) -> bool:
+    """True when box `left` sits wholly left of `right`, overlapping it vertically by more than
+    half of the shorter one, with heights within a factor of 1.5."""
+    hl, hr = left[3] - left[1], right[3] - right[1]
+    overlap = min(left[3], right[3]) - max(left[1], right[1])
+    return left[2] < right[0] and overlap > 0.5 * min(hl, hr) and hr / 1.5 < hl < hr * 1.5
 
 
 def red_fraction(frame: np.ndarray, box) -> float:
