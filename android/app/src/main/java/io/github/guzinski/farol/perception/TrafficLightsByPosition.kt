@@ -15,6 +15,7 @@ sealed interface LightState {
 class TrafficLightsByPosition {
     private val votes = Position.entries.associateWith { ArrayDeque<LampColor?>() }
     private val colors = arrayOfNulls<LampColor>(Position.entries.size)
+    private val misses = IntArray(Position.entries.size)
     private var previousTime: Double? = null
     val display: List<LampColor?> get() = colors.toList()
 
@@ -39,17 +40,24 @@ class TrafficLightsByPosition {
             val color = best[position]?.color
             if (gap > SLOW_FRAME_GAP_SECONDS) {
                 val previous = window.lastOrNull()
+                val index = position.ordinal
                 // Consecutive agreeing frames can confirm a color when frames are sparse.
-                // A missing reading or a long stall clears the last confirmed color.
-                if (color == null || gap > MAX_CONFIRMATION_GAP_SECONDS) {
-                    colors[position.ordinal] = null
-                } else if (color == previous) {
-                    colors[position.ordinal] = color
+                // A bump or blur often loses the light for one frame, so only a second missing
+                // reading in a row, or a long stall, clears the last confirmed color.
+                if (gap > MAX_CONFIRMATION_GAP_SECONDS) {
+                    colors[index] = null
+                    misses[index] = 0
+                } else if (color == null) {
+                    if (++misses[index] >= MISSES_TO_CLEAR) colors[index] = null
+                } else {
+                    misses[index] = 0
+                    if (color == previous) colors[index] = color
                 }
                 window.clear()
                 window.addLast(color)
                 continue
             }
+            misses[position.ordinal] = 0
             if (window.size == 9) window.removeFirst()
             window.addLast(color)
             if (window.size == 9) {
@@ -69,5 +77,6 @@ class TrafficLightsByPosition {
     private companion object {
         const val SLOW_FRAME_GAP_SECONDS = .16
         const val MAX_CONFIRMATION_GAP_SECONDS = 1.5
+        const val MISSES_TO_CLEAR = 2
     }
 }

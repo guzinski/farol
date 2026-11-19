@@ -47,32 +47,27 @@ internal class YoloInput(private val width: Int, private val height: Int) {
         val fraction = FloatArray(target) { (positions[it] - lower[it]).toFloat() }
     }
 
+    private data class Size(val frameWidth: Int, val bandHeight: Int, val width: Int, val height: Int)
+    private var axes: Triple<Size, Axis, Axis>? = null
+    private val row = IntArray(width)
+
     fun prepare(frame: Pixels, transform: Letterbox): ByteBuffer {
-        val xAxis = Axis(frame.width, transform.width)
-        val yAxis = Axis(transform.bandHeight, transform.height)
+        val size = Size(frame.width, transform.bandHeight, transform.width, transform.height)
+        val (_, xAxis, yAxis) = axes?.takeIf { it.first == size }
+            ?: Triple(size, Axis(frame.width, transform.width), Axis(transform.bandHeight, transform.height))
+                .also { axes = it }
         pixels.fill(normalized[114])
-        for (row in 0 until transform.height) {
-            val y0 = yAxis.lower[row]
-            val y1 = yAxis.upper[row]
-            val fy = yAxis.fraction[row]
-            var offset = ((row + transform.top) * width + transform.left) * 3
+        for (line in 0 until transform.height) {
+            frame.bilinearRow(
+                yAxis.lower[line], yAxis.upper[line], yAxis.fraction[line],
+                xAxis.lower, xAxis.upper, xAxis.fraction, transform.width, row,
+            )
+            var offset = ((line + transform.top) * width + transform.left) * 3
             for (col in 0 until transform.width) {
-                val x0 = xAxis.lower[col]
-                val x1 = xAxis.upper[col]
-                val fx = xAxis.fraction[col]
-                val topLeft = frame.rgb(x0, y0)
-                val topRight = frame.rgb(x1, y0)
-                val bottomLeft = frame.rgb(x0, y1)
-                val bottomRight = frame.rgb(x1, y1)
-                for (shift in 16 downTo 0 step 8) {
-                    val a = (topLeft shr shift) and 255
-                    val b = (topRight shr shift) and 255
-                    val c = (bottomLeft shr shift) and 255
-                    val d = (bottomRight shr shift) and 255
-                    val top = a + (b - a) * fx
-                    val bottom = c + (d - c) * fx
-                    pixels[offset++] = normalized[(top + (bottom - top) * fy).roundToInt()]
-                }
+                val rgb = row[col]
+                pixels[offset++] = normalized[(rgb shr 16) and 255]
+                pixels[offset++] = normalized[(rgb shr 8) and 255]
+                pixels[offset++] = normalized[rgb and 255]
             }
         }
         floats.clear()

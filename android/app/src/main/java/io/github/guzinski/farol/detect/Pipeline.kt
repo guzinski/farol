@@ -17,6 +17,7 @@ data class Analysis(
     val fps: Double,
     val preprocessMs: Double,
     val inferenceMs: Double,
+    val frameMs: Double = preprocessMs + inferenceMs,
 )
 
 class FrameGate {
@@ -38,6 +39,7 @@ class Pipeline(private val runner: ModelRunner, private val band: Double) {
     private val recent = ArrayDeque<Long>()
 
     fun analyse(frame: Pixels, t: Double): Analysis {
+        val start = System.nanoTime()
         val detections = tracker.update(runner.detect(frame, band))
         for (detection in detections) {
             val crop = frame.crop(detection.box)
@@ -49,6 +51,6 @@ class Pipeline(private val runner: ModelRunner, private val band: Double) {
         if (recent.size > 30) recent.removeFirst()
         val fps = if (recent.size > 1) (recent.size - 1) * 1e9 / (recent.last() - recent.first()) else 0.0
         return Analysis(frame.width, frame.height, t, detections, evaluator.display, emitted, fps,
-            runner.preprocessMs, runner.inferenceMs)
+            runner.preprocessMs, runner.inferenceMs, (System.nanoTime() - start) / 1e6)
     }
 }

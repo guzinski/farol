@@ -8,6 +8,30 @@ interface Pixels {
     val width: Int
     val height: Int
     fun rgb(x: Int, y: Int): Int
+
+    /**
+     * Writes [count] bilinear samples between rows [y0] and [y1] into [out] as packed RGB.
+     * Sample i blends columns x0[i] and x1[i] with weight fx[i], and the rows with weight [fy].
+     */
+    fun bilinearRow(y0: Int, y1: Int, fy: Float, x0: IntArray, x1: IntArray, fx: FloatArray, count: Int, out: IntArray) {
+        for (i in 0 until count) {
+            val topLeft = rgb(x0[i], y0)
+            val topRight = rgb(x1[i], y0)
+            val bottomLeft = rgb(x0[i], y1)
+            val bottomRight = rgb(x1[i], y1)
+            var packed = 0
+            for (shift in 16 downTo 0 step 8) {
+                val a = (topLeft shr shift) and 255
+                val b = (topRight shr shift) and 255
+                val c = (bottomLeft shr shift) and 255
+                val d = (bottomRight shr shift) and 255
+                val top = a + (b - a) * fx[i]
+                val bottom = c + (d - c) * fx[i]
+                packed = packed or ((top + (bottom - top) * fy).roundToInt() shl shift)
+            }
+            out[i] = packed
+        }
+    }
 }
 
 data class LitCounts(val red: Int, val yellow: Int, val green: Int, val area: Int)
@@ -99,11 +123,21 @@ object LightColor {
             LampColor.entries[ranked[0]].takeIf { thirds[ranked[0]] - thirds[ranked[1]] >= BRIGHTNESS_GAP }
         } else null
         val counts = if (height >= MIN_LIT_HEIGHT) LitCounts(lit[0], lit[1], lit[2], area) else null
-        val best = lit.indices.maxBy { lit[it] }
+        val minimum = maxOf(MIN_LIT_PIXELS.toDouble(), MIN_LIT_FRACTION * area)
         val color = when {
-            counts == null || behind -> null
-            lit[best] < maxOf(MIN_LIT_PIXELS.toDouble(), MIN_LIT_FRACTION * area) -> lamp
-            else -> LampColor.entries[best]
+            counts == null -> null
+            // In direct sun the yellow frame around the face of a front-facing light also passes
+            // the housing test. Its yellow could still be the housing, but enough lit red or green
+            // that beats the yellow or matches the brighter lamp can only come from a lit lamp.
+            behind -> {
+                val candidate = if (lit[2] > lit[0]) LampColor.GREEN else LampColor.RED
+                val count = lit[candidate.ordinal]
+                candidate.takeIf { count >= minimum && (count > lit[1] || lamp == candidate) }
+            }
+            else -> {
+                val best = lit.indices.maxBy { lit[it] }
+                if (lit[best] < minimum) lamp else LampColor.entries[best]
+            }
         }
         return LightRead(counts, thirds, lamp, behind, color)
     }

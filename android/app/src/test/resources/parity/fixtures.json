@@ -1157,5 +1157,100 @@
     "lamp_by_position": null,
     "seen_from_behind": true,
     "traffic_light_color": null
+  },
+  {
+    "file": "android-10-15-47-48.04-905.png",
+    "lit_pixel_counts": [
+      {
+        "red": 142,
+        "yellow": 1,
+        "green": 0
+      },
+      816
+    ],
+    "thirds_brightness": [
+      216.65074157714844,
+      142.19485473632812,
+      135.36029052734375
+    ],
+    "lamp_by_position": "red",
+    "seen_from_behind": false,
+    "traffic_light_color": "red"
+  },
+  {
+    "file": "android-10-15-47-55.44-866.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 0
+      },
+      1144
+    ],
+    "thirds_brightness": [
+      162.31565856933594,
+      153.49465942382812,
+      203.5
+    ],
+    "lamp_by_position": "green",
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "android-10-15-47-55.44-1146.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 58,
+        "green": 106
+      },
+      1272
+    ],
+    "thirds_brightness": [
+      145.6875,
+      149.23611450195312,
+      185.88970947265625
+    ],
+    "lamp_by_position": "green",
+    "seen_from_behind": true,
+    "traffic_light_color": "green"
+  },
+  {
+    "file": "android-10-15-47-61.04-1263.png",
+    "lit_pixel_counts": [
+      {
+        "red": 250,
+        "yellow": 1069,
+        "green": 0
+      },
+      3645
+    ],
+    "thirds_brightness": [
+      196.02139282226562,
+      195.8115234375,
+      188.195068359375
+    ],
+    "lamp_by_position": null,
+    "seen_from_behind": true,
+    "traffic_light_color": null
+  },
+  {
+    "file": "android-10-17-53-185.16-928.png",
+    "lit_pixel_counts": [
+      {
+        "red": 0,
+        "yellow": 0,
+        "green": 2
+      },
+      629
+    ],
+    "thirds_brightness": [
+      132.669677734375,
+      133.14215087890625,
+      191.1568603515625
+    ],
+    "lamp_by_position": "green",
+    "seen_from_behind": false,
+    "traffic_light_color": "green"
   }
 ]

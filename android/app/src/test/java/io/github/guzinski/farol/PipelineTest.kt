@@ -96,11 +96,28 @@ class PipelineTest {
         assertNull(feed(57.22))
         assertNull(feed(58.35, green))
         assertEquals(LightState.Single(LampColor.GREEN), feed(59.49, green))
-        assertNull(feed(60.62))
+        assertEquals(LightState.Single(LampColor.GREEN), feed(60.62))
+        assertNull(feed(61.75))
         assertNull(feed(76.52, green))
         assertNull(feed(77.65, red))
         assertNull(feed(80.0, red))
         assertEquals(LightState.Single(LampColor.RED), feed(81.1, red))
+    }
+
+    @Test
+    fun slowFramesKeepAColorThroughOneMissedReading() {
+        val evaluator = Evaluator()
+        val red = light(100, LampColor.RED)
+        fun analyse(t: Double, vararg ds: Detection) = evaluator.evaluate(t, ds.toList(), 200, 100, DEFAULT_BAND, emptySet())
+        // Session 2026-11-19_11-39-43: a bump loses the light for one frame at 2.5 fps.
+        assertTrue(analyse(47.15, red).isEmpty())
+        assertEquals("traffic_light.red", analyse(47.55, red).single().key)
+        assertTrue(analyse(48.02, red).isEmpty())
+        assertTrue(analyse(48.42).isEmpty())
+        assertTrue(analyse(48.85, red).isEmpty())
+        assertTrue(analyse(49.29).isEmpty())
+        assertTrue(analyse(49.65, red).isEmpty())
+        assertTrue(analyse(50.05, red).isEmpty())
     }
 
     @Test

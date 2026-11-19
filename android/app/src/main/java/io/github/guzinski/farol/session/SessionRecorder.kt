@@ -1,6 +1,10 @@
 package io.github.guzinski.farol.session
 
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
+import android.os.PowerManager
 import android.os.Build
 import io.github.guzinski.farol.BuildConfig
 import io.github.guzinski.farol.detect.Analysis
@@ -14,7 +18,18 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class SessionRecorder(val directory: File, private val metadata: JSONObject) {
+class SessionRecorder(val directory: File, private val metadata: JSONObject, private val thermal: Thermal? = null) {
+    /** Reads the device temperature. getThermalHeadroom answers at most about once per second. */
+    class Thermal(private val context: Context) {
+        private val power = context.getSystemService(PowerManager::class.java)
+        val status: Int get() = power.currentThermalStatus
+        val headroom: Float get() = power.getThermalHeadroom(0)
+        val batteryCelsius: Double?
+            get() = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+                ?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, Int.MIN_VALUE)
+                ?.takeIf { it != Int.MIN_VALUE }?.let { it / 10.0 }
+    }
+
     val video = File(directory, "video.mp4")
     private val detections = File(directory, "detections.jsonl").bufferedWriter()
     private val alerts = JSONArray()
@@ -25,6 +40,12 @@ class SessionRecorder(val directory: File, private val metadata: JSONObject) {
     private var frames = 0
     private var totalPreprocessMs = 0.0
     private var totalInferenceMs = 0.0
+    private var totalFrameMs = 0.0
+    private var nextThermal = 0L
+    private var maxThermalStatus = -1
+    private var minHeadroom = Float.NaN
+    private var startBattery: Double? = null
+    private var lastBattery: Double? = null
 
     fun frame(result: Analysis, translator: Translator) {
         lastProcessed = System.nanoTime()
@@ -37,7 +58,22 @@ class SessionRecorder(val directory: File, private val metadata: JSONObject) {
         frames++
         totalPreprocessMs += result.preprocessMs
         totalInferenceMs += result.inferenceMs
-        detections.write(JSONObject().put("t", result.time).put("detections", JSONArray(result.detections.map(::record))).toString())
+        totalFrameMs += result.frameMs
+        val line = JSONObject().put("t", result.time)
+            .put("preprocess_ms", result.preprocessMs).put("inference_ms", result.inferenceMs).put("frame_ms", result.frameMs)
+        if (thermal != null && lastProcessed >= nextThermal) {
+            nextThermal = lastProcessed + THERMAL_INTERVAL_NS
+            val status = thermal.status
+            val headroom = thermal.headroom
+            val battery = thermal.batteryCelsius
+            maxThermalStatus = maxOf(maxThermalStatus, status)
+            if (!headroom.isNaN()) minHeadroom = if (minHeadroom.isNaN()) headroom else minOf(minHeadroom, headroom)
+            if (startBattery == null) startBattery = battery
+            lastBattery = battery ?: lastBattery
+            line.put("thermal_status", status).put("battery_c", battery ?: JSONObject.NULL)
+                .put("thermal_headroom", headroom.takeUnless { it.isNaN() }?.toDouble() ?: JSONObject.NULL)
+        }
+        detections.write(line.put("detections", JSONArray(result.detections.map(::record))).toString())
         detections.newLine()
         for (alert in result.alerts) {
             val params = alert.lights?.let { lights ->
@@ -64,6 +100,11 @@ class SessionRecorder(val directory: File, private val metadata: JSONObject) {
                 .put("analysed_frames", frames)
                 .put("mean_preprocess_ms", if (frames > 0) totalPreprocessMs / frames else JSONObject.NULL)
                 .put("mean_inference_ms", if (frames > 0) totalInferenceMs / frames else JSONObject.NULL)
+                .put("mean_frame_ms", if (frames > 0) totalFrameMs / frames else JSONObject.NULL)
+                .put("max_thermal_status", if (maxThermalStatus >= 0) maxThermalStatus else JSONObject.NULL)
+                .put("min_thermal_headroom", minHeadroom.takeUnless { it.isNaN() }?.toDouble() ?: JSONObject.NULL)
+                .put("battery_c_start", startBattery ?: JSONObject.NULL)
+                .put("battery_c_end", lastBattery ?: JSONObject.NULL)
                 .put("video_duration_s", elapsedSeconds)
                 .put("position_basis", "image x-coordinate")
                 .put("error", error ?: JSONObject.NULL)
@@ -89,6 +130,8 @@ class SessionRecorder(val directory: File, private val metadata: JSONObject) {
     }
 
     companion object {
+        private const val THERMAL_INTERVAL_NS = 2_000_000_000L
+
         internal fun root(context: Context): File? =
             context.externalMediaDirs.firstOrNull()?.let { File(it, "sessions") }
 
@@ -99,7 +142,7 @@ class SessionRecorder(val directory: File, private val metadata: JSONObject) {
             var time = System.currentTimeMillis()
             while (true) {
                 val directory = File(root, format.format(Date(time)))
-                if (directory.mkdir()) return SessionRecorder(directory, metadata)
+                if (directory.mkdir()) return SessionRecorder(directory, metadata, Thermal(context.applicationContext))
                 check(directory.isDirectory) { "Could not create a new session." }
                 time += 1_000
             }

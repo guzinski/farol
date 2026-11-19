@@ -155,11 +155,21 @@ def traffic_light_color(frame: np.ndarray, box: tuple[int, int, int, int]) -> st
     """Classifies the lit lamp by the hue of the bright, saturated pixels, falling back to
     which lamp is lit when the hue is too washed out to tell."""
     read = lit_pixel_counts(frame, box)
-    if read is None or seen_from_behind(frame, box):
+    if read is None:
         return None
     counts, area = read
+    minimum = max(4, 0.02 * area)
+    if seen_from_behind(frame, box):
+        # In direct sun the yellow frame around the face of a front-facing light also passes
+        # the housing test. Its yellow could still be the housing, but enough lit red or green
+        # that beats the yellow or matches the brighter lamp can only come from a lit lamp.
+        color = max(("red", "green"), key=lambda c: counts[c])
+        count = counts[color]
+        if count >= minimum and (count > counts["yellow"] or lamp_by_position(frame, box) == color):
+            return color
+        return None
     color, count = max(counts.items(), key=lambda kv: kv[1])
-    if count < max(4, 0.02 * area):
+    if count < minimum:
         return lamp_by_position(frame, box)
     return color
 
